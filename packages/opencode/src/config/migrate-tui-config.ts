@@ -13,7 +13,6 @@ const log = Log.create({ service: "tui.migrate" })
 const TUI_SCHEMA_URL = "https://opencode.ai/tui.json"
 
 interface MigrateInput {
-  projectFiles: string[]
   directories: string[]
   custom?: string
   managed: string
@@ -21,13 +20,10 @@ interface MigrateInput {
 
 /**
  * Migrates tui-specific keys (theme, keybinds, tui) from opencode.json files
- * into dedicated tui.json files.  Runs once on startup; skipped when any
- * tui.json already exists.
+ * into dedicated tui.json files. Migration is performed per-directory and
+ * skips only locations where a tui.json already exists.
  */
 export async function migrateTuiConfig(input: MigrateInput) {
-  const existing = await hasAnyTuiConfig(input)
-  if (existing) return
-
   const opencode = await opencodeFiles(input)
   for (const file of opencode) {
     const source = await Bun.file(file)
@@ -84,24 +80,6 @@ async function backupAndStripLegacy(file: string, source: string) {
 
   await Bun.write(file, text)
   log.info("stripped tui keys from server config", { path: file, backup })
-}
-
-async function hasAnyTuiConfig(input: MigrateInput) {
-  for (const file of ConfigPaths.fileInDirectory(Global.Path.config, "tui")) {
-    if (await Bun.file(file).exists()) return true
-  }
-  if (input.projectFiles.length) return true
-  for (const dir of unique(input.directories)) {
-    if (!dir.endsWith(".opencode") && dir !== Flag.OPENCODE_CONFIG_DIR) continue
-    for (const file of ConfigPaths.fileInDirectory(dir, "tui")) {
-      if (await Bun.file(file).exists()) return true
-    }
-  }
-  if (input.custom && (await Bun.file(input.custom).exists())) return true
-  for (const file of ConfigPaths.fileInDirectory(input.managed, "tui")) {
-    if (await Bun.file(file).exists()) return true
-  }
-  return false
 }
 
 async function opencodeFiles(input: { directories: string[]; managed: string }) {

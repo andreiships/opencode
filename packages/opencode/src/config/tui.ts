@@ -58,7 +58,7 @@ export namespace TuiConfig {
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
     const custom = customPath()
     const managed = Config.managedConfigDir()
-    await migrateTuiConfig({ projectFiles, directories, custom, managed })
+    await migrateTuiConfig({ directories, custom, managed })
     // Re-compute after migration since migrateTuiConfig may have created new tui.json files
     projectFiles = Flag.OPENCODE_DISABLE_PROJECT_CONFIG
       ? []

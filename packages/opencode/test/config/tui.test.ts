@@ -76,6 +76,39 @@ test("migrates tui-specific keys from opencode.json when tui.json does not exist
   })
 })
 
+test("migrates project legacy tui keys even when global tui.json already exists", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(path.join(Global.Path.config, "tui.json"), JSON.stringify({ theme: "global" }, null, 2))
+      await Bun.write(
+        path.join(dir, "opencode.json"),
+        JSON.stringify(
+          {
+            theme: "project-migrated",
+            tui: { scroll_speed: 2 },
+          },
+          null,
+          2,
+        ),
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.theme).toBe("project-migrated")
+      expect(config.scroll_speed).toBe(2)
+      expect(await Bun.file(path.join(tmp.path, "tui.json")).exists()).toBe(true)
+
+      const server = JSON.parse(await Bun.file(path.join(tmp.path, "opencode.json")).text())
+      expect(server.theme).toBeUndefined()
+      expect(server.tui).toBeUndefined()
+    },
+  })
+})
+
 test("flattens nested tui key inside tui.json", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
