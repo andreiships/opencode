@@ -6,11 +6,14 @@ import { Instance } from "../../src/project/instance"
 import { TuiConfig } from "../../src/config/tui"
 import { Global } from "../../src/global"
 
+const managedConfigDir = process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR!
+
 afterEach(async () => {
   delete process.env.OPENCODE_CONFIG
   delete process.env.OPENCODE_TUI_CONFIG
   await fs.rm(path.join(Global.Path.config, "tui.json"), { force: true }).catch(() => {})
   await fs.rm(path.join(Global.Path.config, "tui.jsonc"), { force: true }).catch(() => {})
+  await fs.rm(managedConfigDir, { force: true, recursive: true }).catch(() => {})
 })
 
 test("loads tui config with the same precedence order as server config paths", async () => {
@@ -109,6 +112,57 @@ test("migrates project legacy tui keys even when global tui.json already exists"
   })
 })
 
+test("migration backup preserves JSONC comments", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(
+        path.join(dir, "opencode.jsonc"),
+        `{
+  // top-level comment
+  "theme": "jsonc-theme",
+  "tui": {
+    // nested comment
+    "scroll_speed": 1.5
+  }
+}`,
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      await TuiConfig.get()
+      const backup = await Bun.file(path.join(tmp.path, "opencode.jsonc.tui-migration.bak")).text()
+      expect(backup).toContain("// top-level comment")
+      expect(backup).toContain("// nested comment")
+      expect(backup).toContain('"theme": "jsonc-theme"')
+      expect(backup).toContain('"scroll_speed": 1.5')
+    },
+  })
+})
+
+test("migrates legacy tui keys across multiple opencode.json levels", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      const nested = path.join(dir, "apps", "client")
+      await fs.mkdir(nested, { recursive: true })
+      await Bun.write(path.join(dir, "opencode.json"), JSON.stringify({ theme: "root-theme" }, null, 2))
+      await Bun.write(path.join(nested, "opencode.json"), JSON.stringify({ theme: "nested-theme" }, null, 2))
+    },
+  })
+
+  await Instance.provide({
+    directory: path.join(tmp.path, "apps", "client"),
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.theme).toBe("nested-theme")
+      expect(await Bun.file(path.join(tmp.path, "tui.json")).exists()).toBe(true)
+      expect(await Bun.file(path.join(tmp.path, "apps", "client", "tui.json")).exists()).toBe(true)
+    },
+  })
+})
+
 test("flattens nested tui key inside tui.json", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
@@ -194,6 +248,91 @@ test("OPENCODE_TUI_CONFIG provides settings when no project config exists", asyn
       const config = await TuiConfig.get()
       expect(config.theme).toBe("from-env")
       expect(config.diff_style).toBe("stacked")
+    },
+  })
+})
+
+test("applies env and file substitutions in tui.json", async () => {
+  const original = process.env.TUI_THEME_TEST
+  process.env.TUI_THEME_TEST = "env-theme"
+  try {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(path.join(dir, "keybind.txt"), "ctrl+q")
+        await Bun.write(
+          path.join(dir, "tui.json"),
+          JSON.stringify({
+            theme: "{env:TUI_THEME_TEST}",
+            keybinds: { app_exit: "{file:keybind.txt}" },
+          }),
+        )
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await TuiConfig.get()
+        expect(config.theme).toBe("env-theme")
+        expect(config.keybinds?.app_exit).toBe("ctrl+q")
+      },
+    })
+  } finally {
+    if (original === undefined) delete process.env.TUI_THEME_TEST
+    else process.env.TUI_THEME_TEST = original
+  }
+})
+
+test("loads managed tui config and gives it highest precedence", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(path.join(dir, "tui.json"), JSON.stringify({ theme: "project-theme" }, null, 2))
+      await fs.mkdir(managedConfigDir, { recursive: true })
+      await Bun.write(path.join(managedConfigDir, "tui.json"), JSON.stringify({ theme: "managed-theme" }, null, 2))
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.theme).toBe("managed-theme")
+    },
+  })
+})
+
+test("loads .opencode/tui.json", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await fs.mkdir(path.join(dir, ".opencode"), { recursive: true })
+      await Bun.write(path.join(dir, ".opencode", "tui.json"), JSON.stringify({ diff_style: "stacked" }, null, 2))
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.diff_style).toBe("stacked")
+    },
+  })
+})
+
+test("gracefully falls back when tui.json has invalid JSON", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(path.join(dir, "tui.json"), "{ invalid json }")
+      await fs.mkdir(managedConfigDir, { recursive: true })
+      await Bun.write(path.join(managedConfigDir, "tui.json"), JSON.stringify({ theme: "managed-fallback" }, null, 2))
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.theme).toBe("managed-fallback")
+      expect(config.keybinds).toBeDefined()
     },
   })
 })

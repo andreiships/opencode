@@ -106,7 +106,10 @@ export namespace TuiConfig {
   async function loadFile(filepath: string): Promise<Info> {
     const text = await ConfigPaths.readFile(filepath)
     if (!text) return {}
-    return load(text, filepath)
+    return load(text, filepath).catch((error) => {
+      log.warn("failed to load tui config", { path: filepath, error })
+      return {}
+    })
   }
 
   async function load(text: string, configFilepath: string): Promise<Info> {
