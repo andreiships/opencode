@@ -1,6 +1,7 @@
 import path from "path"
 import { applyEdits, modify, parse as parseJsonc } from "jsonc-parser"
 import { unique } from "remeda"
+import z from "zod"
 import { ConfigPaths } from "./paths"
 import { TuiInfo, TuiOptions } from "./tui-schema"
 import { Instance } from "@/project/instance"
@@ -11,6 +12,17 @@ import { Global } from "@/global"
 const log = Log.create({ service: "tui.migrate" })
 
 const TUI_SCHEMA_URL = "https://opencode.ai/tui.json"
+
+const LegacyTheme = TuiInfo.shape.theme.optional()
+const LegacyRecord = z.record(z.string(), z.unknown()).optional()
+
+const TuiLegacy = z
+  .object({
+    scroll_speed: TuiOptions.shape.scroll_speed.catch(undefined),
+    scroll_acceleration: TuiOptions.shape.scroll_acceleration.catch(undefined),
+    diff_style: TuiOptions.shape.diff_style.catch(undefined),
+  })
+  .strip()
 
 interface MigrateInput {
   directories: string[]
@@ -36,17 +48,13 @@ export async function migrateTuiConfig(input: MigrateInput) {
     const data = parseJsonc(source)
     if (!data || typeof data !== "object" || Array.isArray(data)) continue
 
-    const theme = TuiInfo.shape.theme.safeParse("theme" in data ? data.theme : undefined)
+    const theme = LegacyTheme.safeParse("theme" in data ? data.theme : undefined)
+    const keybinds = LegacyRecord.safeParse("keybinds" in data ? data.keybinds : undefined)
+    const legacyTui = LegacyRecord.safeParse("tui" in data ? data.tui : undefined)
     const extracted = {
       theme: theme.success ? theme.data : undefined,
-      keybinds:
-        "keybinds" in data && data.keybinds && typeof data.keybinds === "object" && !Array.isArray(data.keybinds)
-          ? (data.keybinds as Record<string, unknown>)
-          : undefined,
-      tui:
-        "tui" in data && data.tui && typeof data.tui === "object" && !Array.isArray(data.tui)
-          ? (data.tui as Record<string, unknown>)
-          : undefined,
+      keybinds: keybinds.success ? keybinds.data : undefined,
+      tui: legacyTui.success ? legacyTui.data : undefined,
     }
     const tui = extracted.tui ? normalizeTui(extracted.tui) : undefined
     if (extracted.theme === undefined && extracted.keybinds === undefined && !tui) continue
@@ -80,20 +88,15 @@ export async function migrateTuiConfig(input: MigrateInput) {
 }
 
 function normalizeTui(data: Record<string, unknown>) {
-  const result: Record<string, unknown> = {}
-  const speed = TuiOptions.shape.scroll_speed.safeParse(data.scroll_speed)
-  if (speed.success && speed.data !== undefined) result.scroll_speed = speed.data
-
-  const style = TuiOptions.shape.diff_style.safeParse(data.diff_style)
-  if (style.success && style.data !== undefined) result.diff_style = style.data
-
-  const acceleration = TuiOptions.shape.scroll_acceleration.safeParse(data.scroll_acceleration)
-  if (acceleration.success && acceleration.data !== undefined) {
-    result.scroll_acceleration = acceleration.data
+  const parsed = TuiLegacy.parse(data)
+  if (
+    parsed.scroll_speed === undefined &&
+    parsed.diff_style === undefined &&
+    parsed.scroll_acceleration === undefined
+  ) {
+    return
   }
-
-  if (!Object.keys(result).length) return
-  return result
+  return parsed
 }
 
 async function backupAndStripLegacy(file: string, source: string) {
