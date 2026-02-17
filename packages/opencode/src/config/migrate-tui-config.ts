@@ -1,8 +1,8 @@
 import path from "path"
 import { applyEdits, modify, parse as parseJsonc } from "jsonc-parser"
 import { unique } from "remeda"
-import { Config } from "./config"
 import { ConfigPaths } from "./paths"
+import { TuiInfo, TuiOptions } from "./tui-schema"
 import { Instance } from "@/project/instance"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util/log"
@@ -28,20 +28,28 @@ export async function migrateTuiConfig(input: MigrateInput) {
   for (const file of opencode) {
     const source = await Bun.file(file)
       .text()
-      .catch(() => undefined)
+      .catch((error) => {
+        log.warn("failed to read config for tui migration", { path: file, error })
+        return undefined
+      })
     if (!source) continue
     const data = parseJsonc(source)
     if (!data || typeof data !== "object" || Array.isArray(data)) continue
 
+    const theme = TuiInfo.shape.theme.safeParse("theme" in data ? data.theme : undefined)
     const extracted = {
-      theme: "theme" in data ? (data.theme as string | undefined) : undefined,
-      keybinds: "keybinds" in data ? (data.keybinds as Record<string, unknown>) : undefined,
+      theme: theme.success ? theme.data : undefined,
+      keybinds:
+        "keybinds" in data && data.keybinds && typeof data.keybinds === "object" && !Array.isArray(data.keybinds)
+          ? (data.keybinds as Record<string, unknown>)
+          : undefined,
       tui:
         "tui" in data && data.tui && typeof data.tui === "object" && !Array.isArray(data.tui)
           ? (data.tui as Record<string, unknown>)
           : undefined,
     }
-    if (!extracted.theme && !extracted.keybinds && !extracted.tui) continue
+    const tui = extracted.tui ? normalizeTui(extracted.tui) : undefined
+    if (extracted.theme === undefined && extracted.keybinds === undefined && !tui) continue
 
     const target = path.join(path.dirname(file), "tui.json")
     const targetExists = await Bun.file(target).exists()
@@ -50,22 +58,56 @@ export async function migrateTuiConfig(input: MigrateInput) {
     const payload: Record<string, unknown> = {
       $schema: TUI_SCHEMA_URL,
     }
-    if (extracted.theme) payload.theme = extracted.theme
-    if (extracted.keybinds) payload.keybinds = extracted.keybinds
-    if (extracted.tui) Object.assign(payload, extracted.tui)
+    if (extracted.theme !== undefined) payload.theme = extracted.theme
+    if (extracted.keybinds !== undefined) payload.keybinds = extracted.keybinds
+    if (tui) Object.assign(payload, tui)
 
-    await backupAndStripLegacy(file, source)
-    await Bun.write(target, JSON.stringify(payload, null, 2))
+    const wrote = await Bun.write(target, JSON.stringify(payload, null, 2))
+      .then(() => true)
+      .catch((error) => {
+        log.warn("failed to write tui migration target", { from: file, to: target, error })
+        return false
+      })
+    if (!wrote) continue
+
+    const stripped = await backupAndStripLegacy(file, source)
+    if (!stripped) {
+      log.warn("tui config migrated but source file was not stripped", { from: file, to: target })
+      continue
+    }
     log.info("migrated tui config", { from: file, to: target })
   }
+}
+
+function normalizeTui(data: Record<string, unknown>) {
+  const result: Record<string, unknown> = {}
+  const speed = TuiOptions.shape.scroll_speed.safeParse(data.scroll_speed)
+  if (speed.success && speed.data !== undefined) result.scroll_speed = speed.data
+
+  const style = TuiOptions.shape.diff_style.safeParse(data.diff_style)
+  if (style.success && style.data !== undefined) result.diff_style = style.data
+
+  const acceleration = TuiOptions.shape.scroll_acceleration.safeParse(data.scroll_acceleration)
+  if (acceleration.success && acceleration.data !== undefined) {
+    result.scroll_acceleration = acceleration.data
+  }
+
+  if (!Object.keys(result).length) return
+  return result
 }
 
 async function backupAndStripLegacy(file: string, source: string) {
   const backup = file + ".tui-migration.bak"
   const hasBackup = await Bun.file(backup).exists()
-  if (!hasBackup) {
-    await Bun.write(backup, source)
-  }
+  const backed = hasBackup
+    ? true
+    : await Bun.write(backup, source)
+        .then(() => true)
+        .catch((error) => {
+          log.warn("failed to backup source config during tui migration", { path: file, backup, error })
+          return false
+        })
+  if (!backed) return false
 
   const text = ["theme", "keybinds", "tui"].reduce((acc, key) => {
     const edits = modify(acc, [key], undefined, {
@@ -78,8 +120,15 @@ async function backupAndStripLegacy(file: string, source: string) {
     return applyEdits(acc, edits)
   }, source)
 
-  await Bun.write(file, text)
-  log.info("stripped tui keys from server config", { path: file, backup })
+  return Bun.write(file, text)
+    .then(() => {
+      log.info("stripped tui keys from server config", { path: file, backup })
+      return true
+    })
+    .catch((error) => {
+      log.warn("failed to strip legacy tui keys from server config", { path: file, backup, error })
+      return false
+    })
 }
 
 async function opencodeFiles(input: { directories: string[]; managed: string }) {

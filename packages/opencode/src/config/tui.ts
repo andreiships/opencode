@@ -4,6 +4,7 @@ import { mergeDeep, unique } from "remeda"
 import { Config } from "./config"
 import { ConfigPaths } from "./paths"
 import { migrateTuiConfig } from "./migrate-tui-config"
+import { TuiInfo } from "./tui-schema"
 import { Instance } from "@/project/instance"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util/log"
@@ -12,28 +13,7 @@ import { Global } from "@/global"
 export namespace TuiConfig {
   const log = Log.create({ service: "tui.config" })
 
-  const TUI = z.object({
-    scroll_speed: z.number().min(0.001).optional().describe("TUI scroll speed"),
-    scroll_acceleration: z
-      .object({
-        enabled: z.boolean().describe("Enable scroll acceleration"),
-      })
-      .optional()
-      .describe("Scroll acceleration settings"),
-    diff_style: z
-      .enum(["auto", "stacked"])
-      .optional()
-      .describe("Control diff rendering style: 'auto' adapts to terminal width, 'stacked' always shows single column"),
-  })
-
-  export const Info = z
-    .object({
-      $schema: z.string().optional(),
-      theme: z.string().optional(),
-      keybinds: Config.Keybinds.optional(),
-    })
-    .extend(TUI.shape)
-    .strict()
+  export const Info = TuiInfo
 
   export type Info = z.output<typeof Info>
 

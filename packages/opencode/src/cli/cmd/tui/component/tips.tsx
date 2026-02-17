@@ -140,7 +140,7 @@ const TIPS = [
   "Press {highlight}Ctrl+X G{/highlight} or {highlight}/timeline{/highlight} to jump to specific messages",
   "Press {highlight}Ctrl+X H{/highlight} to toggle code block visibility in messages",
   "Press {highlight}Ctrl+X S{/highlight} or {highlight}/status{/highlight} to see system status info",
-  "Enable {highlight}tui.scroll_acceleration{/highlight} for smooth macOS-style scrolling",
+  "Enable {highlight}scroll_acceleration{/highlight} in {highlight}tui.json{/highlight} for smooth macOS-style scrolling",
   "Toggle username display in chat via command palette ({highlight}Ctrl+P{/highlight})",
   "Run {highlight}docker run -it --rm ghcr.io/anomalyco/opencode{/highlight} for containerized use",
   "Use {highlight}/connect{/highlight} with OpenCode Zen for curated, tested models",

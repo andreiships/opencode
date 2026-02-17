@@ -112,6 +112,87 @@ test("migrates project legacy tui keys even when global tui.json already exists"
   })
 })
 
+test("drops unknown legacy tui keys during migration", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(
+        path.join(dir, "opencode.json"),
+        JSON.stringify(
+          {
+            theme: "migrated-theme",
+            tui: { scroll_speed: 2, foo: 1 },
+          },
+          null,
+          2,
+        ),
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.theme).toBe("migrated-theme")
+      expect(config.scroll_speed).toBe(2)
+
+      const text = await Bun.file(path.join(tmp.path, "tui.json")).text()
+      const migrated = JSON.parse(text)
+      expect(migrated.scroll_speed).toBe(2)
+      expect(migrated.foo).toBeUndefined()
+    },
+  })
+})
+
+test("skips migration when tui.json already exists", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(path.join(dir, "opencode.json"), JSON.stringify({ theme: "legacy" }, null, 2))
+      await Bun.write(path.join(dir, "tui.json"), JSON.stringify({ diff_style: "stacked" }, null, 2))
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.diff_style).toBe("stacked")
+      expect(config.theme).toBeUndefined()
+
+      const server = JSON.parse(await Bun.file(path.join(tmp.path, "opencode.json")).text())
+      expect(server.theme).toBe("legacy")
+      expect(await Bun.file(path.join(tmp.path, "opencode.json.tui-migration.bak")).exists()).toBe(false)
+    },
+  })
+})
+
+test("continues loading tui config when legacy source cannot be stripped", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(path.join(dir, "opencode.json"), JSON.stringify({ theme: "readonly-theme" }, null, 2))
+    },
+  })
+
+  const source = path.join(tmp.path, "opencode.json")
+  await fs.chmod(source, 0o444)
+
+  try {
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await TuiConfig.get()
+        expect(config.theme).toBe("readonly-theme")
+        expect(await Bun.file(path.join(tmp.path, "tui.json")).exists()).toBe(true)
+
+        const server = JSON.parse(await Bun.file(source).text())
+        expect(server.theme).toBe("readonly-theme")
+      },
+    })
+  } finally {
+    await fs.chmod(source, 0o644)
+  }
+})
+
 test("migration backup preserves JSONC comments", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
