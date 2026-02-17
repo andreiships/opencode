@@ -252,6 +252,26 @@ test("OPENCODE_TUI_CONFIG provides settings when no project config exists", asyn
   })
 })
 
+test("does not derive tui path from OPENCODE_CONFIG", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      const customDir = path.join(dir, "custom")
+      await fs.mkdir(customDir, { recursive: true })
+      await Bun.write(path.join(customDir, "opencode.json"), JSON.stringify({ model: "test/model" }))
+      await Bun.write(path.join(customDir, "tui.json"), JSON.stringify({ theme: "should-not-load" }))
+      process.env.OPENCODE_CONFIG = path.join(customDir, "opencode.json")
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await TuiConfig.get()
+      expect(config.theme).toBeUndefined()
+    },
+  })
+})
+
 test("applies env and file substitutions in tui.json", async () => {
   const original = process.env.TUI_THEME_TEST
   process.env.TUI_THEME_TEST = "env-theme"

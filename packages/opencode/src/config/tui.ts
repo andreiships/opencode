@@ -1,4 +1,3 @@
-import path from "path"
 import { existsSync } from "fs"
 import z from "zod"
 import { mergeDeep, unique } from "remeda"
@@ -43,12 +42,7 @@ export namespace TuiConfig {
   }
 
   function customPath() {
-    if (Flag.OPENCODE_TUI_CONFIG) return Flag.OPENCODE_TUI_CONFIG
-    if (!Flag.OPENCODE_CONFIG) return
-    const file = path.basename(Flag.OPENCODE_CONFIG)
-    if (file === "tui.json" || file === "tui.jsonc") return Flag.OPENCODE_CONFIG
-    if (file === "opencode.jsonc") return path.join(path.dirname(Flag.OPENCODE_CONFIG), "tui.jsonc")
-    return path.join(path.dirname(Flag.OPENCODE_CONFIG), "tui.json")
+    return Flag.OPENCODE_TUI_CONFIG
   }
 
   const state = Instance.state(async () => {
