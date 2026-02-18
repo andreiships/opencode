@@ -2,6 +2,7 @@ import { Flag } from "@/flag/flag"
 import { lazy } from "@/util/lazy"
 import path from "path"
 import { spawn, type ChildProcess } from "child_process"
+import { statSync } from "fs"
 
 const SIGKILL_TIMEOUT_MS = 200
 
@@ -43,7 +44,7 @@ export namespace Shell {
         // git.exe is typically at: C:\Program Files\Git\cmd\git.exe
         // bash.exe is at: C:\Program Files\Git\bin\bash.exe
         const bash = path.join(git, "..", "..", "bin", "bash.exe")
-        if (Bun.file(bash).size) return bash
+        if (statSync(bash, { throwIfNoEntry: false })?.size) return bash
       }
       return process.env.COMSPEC || "cmd.exe"
     }
