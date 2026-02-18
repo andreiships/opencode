@@ -7,6 +7,7 @@ import { Locale } from "../../util/locale"
 import { Flag } from "../../flag/flag"
 import { EOL } from "os"
 import path from "path"
+import { statSync } from "fs"
 
 function pagerCmd(): string[] {
   const lessOptions = ["-R", "-S"]
@@ -17,18 +18,18 @@ function pagerCmd(): string[] {
   // user could have less installed via other options
   const lessOnPath = Bun.which("less")
   if (lessOnPath) {
-    if (Bun.file(lessOnPath).size) return [lessOnPath, ...lessOptions]
+    if (statSync(lessOnPath, { throwIfNoEntry: false })?.size) return [lessOnPath, ...lessOptions]
   }
 
   if (Flag.OPENCODE_GIT_BASH_PATH) {
     const less = path.join(Flag.OPENCODE_GIT_BASH_PATH, "..", "..", "usr", "bin", "less.exe")
-    if (Bun.file(less).size) return [less, ...lessOptions]
+    if (statSync(less, { throwIfNoEntry: false })?.size) return [less, ...lessOptions]
   }
 
   const git = Bun.which("git")
   if (git) {
     const less = path.join(git, "..", "..", "usr", "bin", "less.exe")
-    if (Bun.file(less).size) return [less, ...lessOptions]
+    if (statSync(less, { throwIfNoEntry: false })?.size) return [less, ...lessOptions]
   }
 
   // Fall back to Windows built-in more (via cmd.exe)
