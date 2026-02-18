@@ -9,7 +9,7 @@ const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
 
 describe("POST /session/:sessionID/tool/call", () => {
-  test.fails("returns 404 when session does not exist", async () => {
+  test("returns 404 when session does not exist", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
@@ -24,7 +24,7 @@ describe("POST /session/:sessionID/tool/call", () => {
     })
   })
 
-  test.fails("returns 400 when request body is malformed", async () => {
+  test("returns 400 when request body is malformed", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
@@ -44,7 +44,7 @@ describe("POST /session/:sessionID/tool/call", () => {
     })
   })
 
-  test.fails("returns 200 with isError:true for unknown tool", async () => {
+  test("returns 200 with isError:true for unknown tool", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
@@ -69,7 +69,7 @@ describe("POST /session/:sessionID/tool/call", () => {
     })
   })
 
-  test.fails("returns 200 with content array for successful tool execution", async () => {
+  test("returns 200 with content array for successful tool execution", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
