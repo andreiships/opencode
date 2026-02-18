@@ -6,19 +6,9 @@ on:
 
 jobs:
   check-standards:
-    if: |
-      github.event.pull_request.user.login != 'actions-user' &&
-      github.event.pull_request.user.login != 'opencode' &&
-      github.event.pull_request.user.login != 'rekram1-node' &&
-      github.event.pull_request.user.login != 'thdxr' &&
-      github.event.pull_request.user.login != 'kommander' &&
-      github.event.pull_request.user.login != 'jayair' &&
-      github.event.pull_request.user.login != 'fwang' &&
-      github.event.pull_request.user.login != 'adamdotdevin' &&
-      github.event.pull_request.user.login != 'iamdavidhill' &&
-      github.event.pull_request.user.login != 'opencode-agent[bot]'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - name: Check PR standards
@@ -26,6 +16,22 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request;
+            const login = pr.user.login;
+
+            // Check if author is a team member or bot
+            if (login === 'opencode-agent[bot]') return;
+            const { data: file } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: '.github/TEAM_MEMBERS',
+              ref: 'dev'
+            });
+            const members = Buffer.from(file.content, 'base64').toString().split('\n').map(l => l.trim()).filter(Boolean);
+            if (members.includes(login)) {
+              console.log(`Skipping: ${login} is a team member`);
+              return;
+            }
+
             const title = pr.title;
 
             async function addLabel(label) {
@@ -139,19 +145,9 @@ jobs:
             console.log('PR meets all standards');
 
   check-compliance:
-    if: |
-      github.event.pull_request.user.login != 'actions-user' &&
-      github.event.pull_request.user.login != 'opencode' &&
-      github.event.pull_request.user.login != 'rekram1-node' &&
-      github.event.pull_request.user.login != 'thdxr' &&
-      github.event.pull_request.user.login != 'kommander' &&
-      github.event.pull_request.user.login != 'jayair' &&
-      github.event.pull_request.user.login != 'fwang' &&
-      github.event.pull_request.user.login != 'adamdotdevin' &&
-      github.event.pull_request.user.login != 'iamdavidhill' &&
-      github.event.pull_request.user.login != 'opencode-agent[bot]'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - name: Check PR template compliance
@@ -159,6 +155,22 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request;
+            const login = pr.user.login;
+
+            // Check if author is a team member or bot
+            if (login === 'opencode-agent[bot]') return;
+            const { data: file } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: '.github/TEAM_MEMBERS',
+              ref: 'dev'
+            });
+            const members = Buffer.from(file.content, 'base64').toString().split('\n').map(l => l.trim()).filter(Boolean);
+            if (members.includes(login)) {
+              console.log(`Skipping: ${login} is a team member`);
+              return;
+            }
+
             const body = pr.body || '';
             const title = pr.title;
             const isDocsOrRefactor = /^(docs|refactor)\s*(\([a-zA-Z0-9-]+\))?\s*:/.test(title);
