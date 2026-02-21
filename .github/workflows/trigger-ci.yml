@@ -1,0 +1,65 @@
+name: Trigger CI
+on:
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+  pull-requests: write
+
+jobs:
+  trigger:
+    if: |
+      github.event.issue.pull_request &&
+      github.event.issue.state == 'open' &&
+      startsWith(github.event.comment.body, '/trigger-ci') &&
+      contains(fromJSON('["MEMBER", "COLLABORATOR", "OWNER"]'), github.event.comment.author_association)
+    runs-on: ubicloud-standard-2
+    steps:
+      - name: Re-run workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=${{ github.event.issue.number }}
+          REPO=${{ github.repository }}
+
+          # Get the head SHA of the PR
+          SHA=$(gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid)
+          if [ -z "$SHA" ]; then
+            echo "::error::Failed to retrieve PR head SHA"
+            exit 1
+          fi
+
+          # Re-run all workflow runs for that commit (skip already-running ones)
+          RUN_IDS=$(gh run list --repo "$REPO" --commit "$SHA" --limit 100 --json databaseId -q '.[].databaseId')
+          RERUN_COUNT=0
+          SKIP_COUNT=0
+          if [ -n "$RUN_IDS" ]; then
+            for RUN_ID in $RUN_IDS; do
+              if ERR=$(gh run rerun "$RUN_ID" --repo "$REPO" 2>&1); then
+                RERUN_COUNT=$((RERUN_COUNT + 1))
+              else
+                echo "Skipped run $RUN_ID: $ERR"
+                SKIP_COUNT=$((SKIP_COUNT + 1))
+              fi
+            done
+            echo "Re-ran $RERUN_COUNT workflow(s), skipped $SKIP_COUNT"
+            if [ "$RERUN_COUNT" -eq 0 ] && [ "$SKIP_COUNT" -gt 0 ]; then
+              echo "::error::All reruns failed — likely an auth or API issue"
+              exit 1
+            fi
+          else
+            echo "No workflow runs found for commit $SHA"
+          fi
+
+      - name: React to confirm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions \
+            -f content='+1'
