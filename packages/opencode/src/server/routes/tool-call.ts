@@ -57,14 +57,13 @@ export const ToolCallRoutes = lazy(() =>
       const { name, arguments: args } = c.req.valid("json")
 
       // Validate session exists (throws NotFoundError → 404 via error handler)
-      const session = await Session.get(sessionID)
+      await Session.get(sessionID)
 
-      // Get tools for the session's model context
-      const agent = await Agent.defaultAgent()
-      const tools = await ToolRegistry.tools(
-        { providerID: "opencode", modelID: "default" },
-        agent,
-      )
+      // Resolve agent name → Agent.Info so ToolRegistry receives the correct type
+      const agentName = await Agent.defaultAgent()
+      const agentInfo = await Agent.get(agentName)
+      const modelCtx = agentInfo?.model ?? { providerID: "opencode", modelID: "default" }
+      const tools = await ToolRegistry.tools(modelCtx, agentInfo)
 
       const tool = tools.find((t) => t.id === name)
       if (!tool) {
@@ -81,7 +80,7 @@ export const ToolCallRoutes = lazy(() =>
         const result = await tool.execute(args, {
           sessionID,
           messageID: "tool-call-direct",
-          agent: agent.id,
+          agent: agentName,
           abort: abortController.signal,
           messages,
           metadata() {},

@@ -34,16 +34,16 @@ COPY . .
 RUN cd packages/opencode && bun run script/build.ts --single --skip-install
 
 # Find the built binary (name varies by arch)
-RUN cp $(find packages/opencode/dist -name opencode -type f | head -1) /usr/local/bin/opencode \
+RUN set -e; \
+    binary="$(find packages/opencode/dist -name opencode -type f | head -1)"; \
+    [ -n "$binary" ] || { echo "ERROR: built binary not found in packages/opencode/dist"; exit 1; }; \
+    cp "$binary" /usr/local/bin/opencode \
     && chmod +x /usr/local/bin/opencode
 
 # ---------------------------------------------------------------------------
 # Stage 2: Runtime
 # ---------------------------------------------------------------------------
 FROM alpine:3.21
-
-# Disable Bun runtime transpiler cache in ephemeral containers
-ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
 
 # Runtime dependencies for the compiled binary
 RUN apk add --no-cache libgcc libstdc++ ripgrep git

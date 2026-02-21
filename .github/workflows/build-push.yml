@@ -26,15 +26,23 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          # Only promote :latest for stable releases (no pre-release suffix like -alpha, -rc1)
+          if [[ "$tag" != *-* ]]; then
+            echo "latest_tag=registry.fly.io/pistachiorama-opencode:latest" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          provenance: false
+          platforms: linux/amd64
           tags: |
             registry.fly.io/pistachiorama-opencode:${{ steps.version.outputs.tag }}
-            registry.fly.io/pistachiorama-opencode:latest
+            ${{ steps.version.outputs.latest_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
