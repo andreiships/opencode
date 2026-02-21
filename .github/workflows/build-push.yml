@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-push:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubicloud-standard-2
     steps:
       - uses: actions/checkout@v4
 
