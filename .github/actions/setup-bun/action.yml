@@ -35,6 +35,7 @@ runs:
           node_modules
           packages/*/node_modules
           packages/console/*/node_modules
+          packages/sdk/*/node_modules
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
         axiom-token: ${{ inputs.axiom-token }}
@@ -54,6 +55,7 @@ runs:
           node_modules
           packages/*/node_modules
           packages/console/*/node_modules
+          packages/sdk/*/node_modules
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
         axiom-token: ${{ inputs.axiom-token }}

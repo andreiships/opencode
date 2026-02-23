@@ -84,9 +84,11 @@ runs:
             echo "matched-key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
             exit 0
           else
+            # Treat extraction failure as cache miss — allow bun install to proceed
             _emit "r2_cache_error" "$CACHE_KEY" 200 $(( $(_millis) - T_START )) "$CACHE_KEY"
-            echo "::warning::Cache extraction failed for $CACHE_KEY"
-            exit 1
+            echo "::warning::Cache extraction failed for $CACHE_KEY — falling back to fresh install"
+            echo "cache-hit=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
         fi
 
@@ -112,10 +114,12 @@ runs:
               rm -f "$TMPFILE.headers"
               exit 0
             else
+              # Treat extraction failure as cache miss — allow bun install to proceed
               _emit "r2_cache_error" "$CACHE_KEY" 200 $(( $(_millis) - T_START )) "$MATCHED"
               rm -f "$TMPFILE.headers"
-              echo "::warning::Cache extraction failed for prefix ${MATCHED}"
-              exit 1
+              echo "::warning::Cache extraction failed for prefix ${MATCHED} — falling back to fresh install"
+              echo "cache-hit=false" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
           fi
           rm -f "$TMPFILE.headers"
