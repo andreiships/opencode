@@ -1,21 +1,51 @@
 name: "Setup Bun"
-description: "Setup Bun with caching and install dependencies"
+description: "Setup Bun and install dependencies, with optional R2 node_modules caching"
+
+inputs:
+  cache-token:
+    description: "Bearer token for R2 cache (cache.pistachiorama.ai). Leave empty to skip caching."
+    required: false
+    default: ""
+
+outputs:
+  cache-hit:
+    description: "Whether node_modules were restored from cache (bun install was skipped)"
+    value: ${{ steps.restore.outputs.cache-hit || 'false' }}
+
 runs:
   using: "composite"
   steps:
-    - name: Cache Bun dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.bun/install/cache
-        key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
-        restore-keys: |
-          ${{ runner.os }}-bun-
-
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
         bun-version-file: package.json
 
+    - name: Restore node_modules from R2
+      id: restore
+      if: inputs.cache-token != ''
+      uses: ./.github/actions/r2-cache
+      with:
+        action: restore
+        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lockb') }}
+        path: |
+          node_modules
+          packages/*/node_modules
+          sdks/*/node_modules
+        cache-token: ${{ inputs.cache-token }}
+
     - name: Install dependencies
-      run: bun install
+      if: steps.restore.outputs.cache-hit != 'true'
+      run: bun install --frozen-lockfile
       shell: bash
+
+    - name: Save node_modules to R2
+      if: inputs.cache-token != '' && steps.restore.outputs.cache-hit != 'true'
+      uses: ./.github/actions/r2-cache
+      with:
+        action: save
+        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lockb') }}
+        path: |
+          node_modules
+          packages/*/node_modules
+          sdks/*/node_modules
+        cache-token: ${{ inputs.cache-token }}
