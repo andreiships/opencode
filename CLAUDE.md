@@ -122,13 +122,13 @@ This fork adds a production HTTP server that Pistachiorama's sandbox uses for to
 
 ## Key Entry Points
 
-| File | Purpose |
-|------|---------|
-| `packages/opencode/src/server/server.ts` | Hono app, CORS, auth, request logging |
-| `packages/opencode/src/server/routes/tool-call.ts` | `POST /session/:id/tool/call` — direct tool execution |
-| `packages/opencode/src/server/routes/session.ts` | Session CRUD, chat, abort |
-| `packages/opencode/src/util/log.ts` | Custom logger (writes to stderr/file) |
-| `packages/opencode/src/util/axiom.ts` | Axiom telemetry singleton (graceful no-op without AXIOM_TOKEN) |
+| File                                               | Purpose                                                        |
+| -------------------------------------------------- | -------------------------------------------------------------- |
+| `packages/opencode/src/server/server.ts`           | Hono app, CORS, auth, request logging                          |
+| `packages/opencode/src/server/routes/tool-call.ts` | `POST /session/:id/tool/call` — direct tool execution          |
+| `packages/opencode/src/server/routes/session.ts`   | Session CRUD, chat, abort                                      |
+| `packages/opencode/src/util/log.ts`                | Custom logger (writes to stderr/file)                          |
+| `packages/opencode/src/util/axiom.ts`              | Axiom telemetry singleton (graceful no-op without AXIOM_TOKEN) |
 
 ## Deployment
 
@@ -164,14 +164,14 @@ Use Ubicloud runners for GitHub Actions, never `ubuntu-latest` for new workflows
 
 **Default**: `ubicloud-standard-2` for most jobs.
 **Allowed variants**:
+
 - `ubicloud-standard-{2,4,8}` — Standard x86
 - `ubicloud-standard-{4,8}-arm` — ARM64 for cost savings
 
 ```yaml
 jobs:
   example:
-    runs-on: ubicloud-standard-2  # NOT ubuntu-latest
+    runs-on: ubicloud-standard-2 # NOT ubuntu-latest
 ```
 
 Note: No Windows or macOS Ubicloud runners — remove upstream Windows/macOS jobs when migrating workflows.
-
