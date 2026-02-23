@@ -1,4 +1,3 @@
-const AXIOM_TOKEN = process.env.AXIOM_TOKEN
 const AXIOM_URL = "https://api.axiom.co/v1/datasets"
 
 /**
@@ -6,6 +5,8 @@ const AXIOM_URL = "https://api.axiom.co/v1/datasets"
  * No-op when AXIOM_TOKEN is not set (local dev, testing, CI).
  */
 export function ingest(dataset: string, events: Record<string, unknown>[]): void {
+  // Read at call time so tests can set process.env.AXIOM_TOKEN after import
+  const AXIOM_TOKEN = process.env.AXIOM_TOKEN
   if (!AXIOM_TOKEN) return
 
   // Fire-and-forget: send without awaiting to avoid blocking the request path
