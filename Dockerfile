@@ -21,7 +21,7 @@ COPY patches/ patches/
 COPY packages/ packages/
 
 # Install all dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy full source
 COPY . .
