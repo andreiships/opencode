@@ -23,6 +23,8 @@ jobs:
       - name: Prettier check
         run: bunx prettier --check .
 
+  # Aggregates lint jobs in this workflow. Branch protection must also require
+  # the 'required' job from test.yml to gate unit + e2e tests.
   ci-pass:
     name: CI Pass
     runs-on: ubicloud-standard-2
