@@ -1,0 +1,10 @@
+self-hosted-runner:
+  labels:
+    - ubicloud-standard-2
+    - ubicloud-standard-2-arm
+    - ubicloud-standard-4
+    - ubicloud-standard-4-arm
+    - ubicloud-standard-8
+    - ubicloud-standard-8-arm
+    - ubicloud-standard-16
+    - ubicloud-standard-16-arm
