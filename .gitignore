@@ -27,3 +27,7 @@ target
 opencode-dev
 logs/
 *.bun-build
+
+# AI Rules generated files (upstream ignores these; we commit CLAUDE.md intentionally)
+.claude/
+.claude/agents/claude.md
