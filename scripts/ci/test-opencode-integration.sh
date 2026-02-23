@@ -16,6 +16,8 @@ set -euo pipefail
 BASE_URL="${OPENCODE_URL:-http://localhost:8080}"
 PASS=0
 FAIL=0
+TMPDIR_RUN="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_RUN"' EXIT
 
 pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
@@ -28,9 +30,9 @@ echo "============================================="
 # ---------------------------------------------------------------------------
 echo ""
 echo "Test 1: GET /global/health"
-HTTP_CODE=$(curl -sf -o /tmp/health-response.json -w "%{http_code}" "${BASE_URL}/global/health" 2>/dev/null || echo "000")
+HTTP_CODE=$(curl -sf -o "${TMPDIR_RUN}/health-response.json" -w "%{http_code}" "${BASE_URL}/global/health" 2>/dev/null || echo "000")
 if [ "$HTTP_CODE" = "200" ]; then
-  HEALTHY=$(cat /tmp/health-response.json | grep -o '"healthy":true' || true)
+  HEALTHY=$(grep -o '"healthy":true' "${TMPDIR_RUN}/health-response.json" || true)
   if [ -n "$HEALTHY" ]; then
     pass "Health check returned 200 with healthy:true"
   else
@@ -69,12 +71,12 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "Test 4: POST /session"
-HTTP_CODE=$(curl -s -o /tmp/session-create.json -w "%{http_code}" \
+HTTP_CODE=$(curl -s -o "${TMPDIR_RUN}/session-create.json" -w "%{http_code}" \
   -X POST "${BASE_URL}/session" \
   -H "Content-Type: application/json" \
   -d '{}' 2>/dev/null || echo "000")
 if [ "$HTTP_CODE" = "200" ]; then
-  SESSION_ID=$(cat /tmp/session-create.json | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+  SESSION_ID=$(grep -o '"id":"[^"]*"' "${TMPDIR_RUN}/session-create.json" | head -1 | cut -d'"' -f4 || true)
   if [ -n "$SESSION_ID" ]; then
     pass "Session creation returned 200 with id=${SESSION_ID}"
   else
