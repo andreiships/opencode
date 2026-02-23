@@ -19,7 +19,6 @@ COPY patches/ patches/
 # Copy all packages upfront so bun can resolve the full workspace graph.
 # Individual package.json enumeration is fragile (upstream adds packages often).
 COPY packages/ packages/
-COPY catalog/ catalog/
 
 # Install all dependencies
 RUN bun install --frozen-lockfile
