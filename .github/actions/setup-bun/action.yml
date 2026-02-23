@@ -26,10 +26,11 @@ runs:
       uses: ./.github/actions/r2-cache
       with:
         action: restore
-        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lockb') }}
+        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lock') }}
         path: |
           node_modules
           packages/*/node_modules
+          packages/console/*/node_modules
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
 
@@ -43,9 +44,10 @@ runs:
       uses: ./.github/actions/r2-cache
       with:
         action: save
-        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lockb') }}
+        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lock') }}
         path: |
           node_modules
           packages/*/node_modules
+          packages/console/*/node_modules
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
