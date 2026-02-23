@@ -21,6 +21,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           cache-token: ${{ secrets.TURBO_CACHE_TOKEN }}
+          axiom-token: ${{ secrets.AXIOM_API_TOKEN }}
       - name: Prettier check
         run: bunx prettier --check .
 

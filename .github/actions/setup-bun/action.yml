@@ -6,6 +6,10 @@ inputs:
     description: "Bearer token for R2 cache (cache.pistachiorama.ai). Leave empty to skip caching."
     required: false
     default: ""
+  axiom-token:
+    description: "Axiom API token for cache telemetry. Leave empty to skip metrics."
+    required: false
+    default: ""
 
 outputs:
   cache-hit:
@@ -33,6 +37,7 @@ runs:
           packages/console/*/node_modules
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
+        axiom-token: ${{ inputs.axiom-token }}
 
     - name: Install dependencies
       if: steps.restore.outputs.cache-hit != 'true'
@@ -51,3 +56,4 @@ runs:
           packages/console/*/node_modules
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
+        axiom-token: ${{ inputs.axiom-token }}
