@@ -68,6 +68,16 @@ export const ToolCallRoutes = lazy(() =>
 
       const tool = tools.find((t) => t.id === name)
       if (!tool) {
+        ingest("opencode-tool-calls", [
+          {
+            _time: new Date().toISOString(),
+            tool_call_duration_ms: 0,
+            session_id: sessionID,
+            tool_name: name,
+            is_error: true,
+            error_message: `unknown tool: ${name}`,
+          },
+        ])
         return c.json({
           content: [{ type: "text" as const, text: `unknown tool: ${name}` }],
           isError: true,
@@ -75,11 +85,14 @@ export const ToolCallRoutes = lazy(() =>
       }
 
       const start = performance.now()
+      let result: Awaited<ReturnType<typeof tool.execute>> | undefined
+      let caughtErr: unknown
+
       try {
         const abortController = new AbortController()
         const messages = await Session.messages({ sessionID })
 
-        const result = await tool.execute(args, {
+        result = await tool.execute(args, {
           sessionID,
           messageID: "tool-call-direct",
           agent: agentName,
@@ -88,50 +101,62 @@ export const ToolCallRoutes = lazy(() =>
           metadata() {},
           async ask() {},
         })
-
-        const durationMs = Math.round(performance.now() - start)
-        log.info("tool executed", {
-          sessionID,
-          tool: name,
-          title: result.title,
-          duration: durationMs,
-        })
-        ingest("opencode-tool-calls", [
-          {
-            _time: new Date().toISOString(),
-            tool_call_duration_ms: durationMs,
-            session_id: sessionID,
-            tool_name: name,
-            is_error: false,
-          },
-        ])
-
-        return c.json({
-          content: [{ type: "text" as const, text: result.output }],
-        })
       } catch (err) {
+        caughtErr = err
+      } finally {
         const durationMs = Math.round(performance.now() - start)
-        const message = err instanceof Error ? err.message : String(err)
-        log.error("tool execution failed", {
-          error: err,
-          sessionID,
-          tool: name,
-          duration: durationMs,
-        })
-        ingest("opencode-tool-calls", [
-          {
-            _time: new Date().toISOString(),
-            tool_call_duration_ms: durationMs,
-            session_id: sessionID,
-            tool_name: name,
-            is_error: true,
-          },
-        ])
+
+        if (caughtErr !== undefined) {
+          const message = caughtErr instanceof Error ? caughtErr.message : String(caughtErr)
+          const errorName = caughtErr instanceof Error ? caughtErr.name : undefined
+          log.error("tool execution failed", {
+            error: caughtErr,
+            sessionID,
+            tool: name,
+            duration: durationMs,
+          })
+          ingest("opencode-tool-calls", [
+            {
+              _time: new Date().toISOString(),
+              tool_call_duration_ms: durationMs,
+              session_id: sessionID,
+              tool_name: name,
+              is_error: true,
+              error_message: message,
+              ...(errorName ? { error_name: errorName } : {}),
+            },
+          ])
+        } else if (result !== undefined) {
+          log.info("tool executed", {
+            sessionID,
+            tool: name,
+            title: result.title,
+            duration: durationMs,
+          })
+          ingest("opencode-tool-calls", [
+            {
+              _time: new Date().toISOString(),
+              tool_call_duration_ms: durationMs,
+              session_id: sessionID,
+              tool_name: name,
+              tool_title: result.title,
+              is_error: false,
+            },
+          ])
+        }
+      }
+
+      if (caughtErr !== undefined) {
+        const message = caughtErr instanceof Error ? caughtErr.message : String(caughtErr)
         return c.json({
           content: [{ type: "text" as const, text: message }],
           isError: true,
         })
       }
+
+      return c.json({
+        content: [{ type: "text" as const, text: result!.output }],
+      })
     },
   ),
 )
