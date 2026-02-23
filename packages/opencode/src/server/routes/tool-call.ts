@@ -66,16 +66,24 @@ export const ToolCallRoutes = lazy(() =>
       const modelCtx = agentInfo?.model ?? { providerID: "opencode", modelID: "default" }
       const tools = await ToolRegistry.tools(modelCtx, agentInfo)
 
+      // Base telemetry fields shared across all events
+      const baseTelemetry = {
+        session_id: sessionID,
+        agent_name: agentName,
+        provider_id: modelCtx.providerID,
+        model_id: modelCtx.modelID,
+      }
+
       const tool = tools.find((t) => t.id === name)
       if (!tool) {
         ingest("opencode-tool-calls", [
           {
             _time: new Date().toISOString(),
+            ...baseTelemetry,
             tool_call_duration_ms: 0,
-            session_id: sessionID,
             tool_name: name,
             is_error: true,
-            error_message: `unknown tool: ${name}`,
+            error_name: "UnknownToolError",
           },
         ])
         return c.json({
@@ -107,8 +115,10 @@ export const ToolCallRoutes = lazy(() =>
         const durationMs = Math.round(performance.now() - start)
 
         if (caughtErr !== undefined) {
-          const message = caughtErr instanceof Error ? caughtErr.message : String(caughtErr)
-          const errorName = caughtErr instanceof Error ? caughtErr.name : undefined
+          const errorName = caughtErr instanceof Error ? caughtErr.name : "Error"
+          // Only include error_name in telemetry — not error_message to avoid
+          // inadvertently forwarding sensitive content (paths, tokens, user data)
+          // to third-party telemetry. Full error details remain in log.error.
           log.error("tool execution failed", {
             error: caughtErr,
             sessionID,
@@ -118,12 +128,11 @@ export const ToolCallRoutes = lazy(() =>
           ingest("opencode-tool-calls", [
             {
               _time: new Date().toISOString(),
+              ...baseTelemetry,
               tool_call_duration_ms: durationMs,
-              session_id: sessionID,
               tool_name: name,
               is_error: true,
-              error_message: message,
-              ...(errorName ? { error_name: errorName } : {}),
+              error_name: errorName,
             },
           ])
         } else if (result !== undefined) {
@@ -136,8 +145,8 @@ export const ToolCallRoutes = lazy(() =>
           ingest("opencode-tool-calls", [
             {
               _time: new Date().toISOString(),
+              ...baseTelemetry,
               tool_call_duration_ms: durationMs,
-              session_id: sessionID,
               tool_name: name,
               tool_title: result.title,
               is_error: false,
@@ -155,7 +164,7 @@ export const ToolCallRoutes = lazy(() =>
       }
 
       return c.json({
-        content: [{ type: "text" as const, text: result!.output }],
+        content: [{ type: "text" as const, text: result?.output ?? "" }],
       })
     },
   ),
