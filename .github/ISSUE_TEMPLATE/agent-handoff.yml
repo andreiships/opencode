@@ -1,0 +1,68 @@
+name: Agent Handoff
+description: Structured task handoff for AI agents
+labels:
+  - "agent-handoff"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to hand off a task for another agent to pick up.
+        Be specific — agents work best with clear intent, constraints, and file locations.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "P0 — Critical/Blocking"
+        - "P1 — High"
+        - "P2 — Normal"
+    validations:
+      required: true
+
+  - type: textarea
+    id: intent
+    attributes:
+      label: Intent
+      description: What needs to happen? 1-2 sentences an agent can act on.
+      placeholder: "Add rate limiting to POST /session/:id/tool/call to prevent runaway tool loops."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed? What constraints apply?
+      value: |
+        ### Why
+
+
+        ### Constraints
+
+
+        ### Architectural Notes
+
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-locations
+    attributes:
+      label: Code Locations
+      description: Key files and locations to modify.
+      value: |
+        | File/Location | Notes |
+        |---------------|-------|
+        | `packages/opencode/src/server/routes/tool-call.ts` | |
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Checkboxes for what "done" looks like.
+      value: |
+        - [ ]
+        - [ ] Tests pass (`bun test` in `packages/opencode`)
+    validations:
+      required: true
