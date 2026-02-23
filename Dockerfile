@@ -13,14 +13,13 @@ WORKDIR /app
 # Install build dependencies (needed for native modules like tree-sitter)
 RUN apk add --no-cache python3 make g++ git
 
-# Copy workspace root manifests and patches first for layer caching
+# Copy workspace root manifests first for layer caching
 COPY package.json bun.lock ./
 COPY patches/ patches/
-COPY packages/opencode/package.json packages/opencode/
-COPY packages/script/package.json packages/script/
-COPY packages/plugin/package.json packages/plugin/
-COPY packages/sdk/js/package.json packages/sdk/js/
-COPY packages/util/package.json packages/util/
+# Copy all packages upfront so bun can resolve the full workspace graph.
+# Individual package.json enumeration is fragile (upstream adds packages often).
+COPY packages/ packages/
+COPY catalog/ catalog/
 
 # Install all dependencies
 RUN bun install --frozen-lockfile
