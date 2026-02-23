@@ -5,6 +5,7 @@ import { Session } from "../../session"
 import { ToolRegistry } from "../../tool/registry"
 import { Agent } from "../../agent/agent"
 import { Log } from "../../util/log"
+import { ingest } from "../../util/axiom"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
 
@@ -73,6 +74,7 @@ export const ToolCallRoutes = lazy(() =>
         })
       }
 
+      const start = performance.now()
       try {
         const abortController = new AbortController()
         const messages = await Session.messages({ sessionID })
@@ -87,22 +89,44 @@ export const ToolCallRoutes = lazy(() =>
           async ask() {},
         })
 
+        const durationMs = Math.round(performance.now() - start)
         log.info("tool executed", {
           sessionID,
           tool: name,
           title: result.title,
+          duration: durationMs,
         })
+        ingest("opencode-tool-calls", [
+          {
+            _time: new Date().toISOString(),
+            tool_call_duration_ms: durationMs,
+            session_id: sessionID,
+            tool_name: name,
+            is_error: false,
+          },
+        ])
 
         return c.json({
           content: [{ type: "text" as const, text: result.output }],
         })
       } catch (err) {
+        const durationMs = Math.round(performance.now() - start)
         const message = err instanceof Error ? err.message : String(err)
         log.error("tool execution failed", {
           error: err,
           sessionID,
           tool: name,
+          duration: durationMs,
         })
+        ingest("opencode-tool-calls", [
+          {
+            _time: new Date().toISOString(),
+            tool_call_duration_ms: durationMs,
+            session_id: sessionID,
+            tool_name: name,
+            is_error: true,
+          },
+        ])
         return c.json({
           content: [{ type: "text" as const, text: message }],
           isError: true,
