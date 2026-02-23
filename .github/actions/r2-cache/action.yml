@@ -1,38 +1,38 @@
-name: 'R2 Cache'
-description: 'Restore and save CI caches via Cloudflare R2 (turbo-cache worker v1 API)'
+name: "R2 Cache"
+description: "Restore and save CI caches via Cloudflare R2 (turbo-cache worker v1 API)"
 
 inputs:
   action:
-    description: 'Cache operation: restore or save'
+    description: "Cache operation: restore or save"
     required: true
   key:
-    description: 'Exact cache key'
+    description: "Exact cache key"
     required: true
   restore-keys:
-    description: 'Newline-separated prefix keys for fallback restore'
+    description: "Newline-separated prefix keys for fallback restore"
     required: false
-    default: ''
+    default: ""
   path:
-    description: 'Newline-separated glob patterns of paths to cache'
+    description: "Newline-separated glob patterns of paths to cache"
     required: true
   cache-token:
-    description: 'Bearer token for R2 cache API'
+    description: "Bearer token for R2 cache API"
     required: true
   axiom-token:
-    description: 'Axiom API token for telemetry (optional, skipped if empty)'
+    description: "Axiom API token for telemetry (optional, skipped if empty)"
     required: false
-    default: ''
+    default: ""
 
 outputs:
   cache-hit:
-    description: 'Whether an exact or prefix cache hit occurred'
+    description: "Whether an exact or prefix cache hit occurred"
     value: ${{ steps.restore.outputs.cache-hit || 'false' }}
   matched-key:
-    description: 'The actual cache key that was restored (may differ from input key on prefix match)'
+    description: "The actual cache key that was restored (may differ from input key on prefix match)"
     value: ${{ steps.restore.outputs.matched-key || '' }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Restore cache from R2
       if: inputs.action == 'restore'
