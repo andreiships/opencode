@@ -1,0 +1,7 @@
+$schema: https://raw.githubusercontent.com/Goldziher/ai-rulez/main/schema/ai-rules-v3.schema.json
+name: opencode-fork
+description: OpenCode executor fork for the Pistachiorama sandbox (Spec 131/132)
+version: "3.0"
+presets:
+  - claude
+gitignore: true
