@@ -19,7 +19,8 @@ export function ingest(dataset: string, events: Record<string, unknown>[]): void
   // telemetry failures never surface to callers.
   try {
     // JSON.stringify with BigInt handler; circular refs will throw and be caught below
-    const ndjson = events.map((e) => JSON.stringify(e, (_k, v) => (typeof v === "bigint" ? v.toString() : v))).join("\n") + "\n"
+    const replacer = (_k: string, v: unknown) => (typeof v === "bigint" ? v.toString() : v)
+    const ndjson = events.map((e) => JSON.stringify(e, replacer)).join("\n") + "\n"
     fetch(`${AXIOM_URL}/${dataset}/ingest`, {
       method: "POST",
       headers: {
