@@ -29,6 +29,8 @@ COPY . .
 # Build the native binary for the current platform (linux, single target)
 # --single builds only for the current arch, --skip-install avoids re-fetching
 # platform-specific packages (already installed above)
+# OPENCODE_CHANNEL prevents the build script from calling `git branch` (no .git in Docker context)
+ENV OPENCODE_CHANNEL=latest
 RUN cd packages/opencode && bun run script/build.ts --single --skip-install
 
 # Find the built binary (name varies by arch)
