@@ -21,6 +21,9 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        with:
+          cache-token: ${{ secrets.TURBO_CACHE_TOKEN }}
+          axiom-token: ${{ secrets.AXIOM_API_TOKEN }}
 
       - name: Configure git identity
         run: |
@@ -40,7 +43,8 @@ jobs:
 
   e2e:
     name: e2e (linux)
-    needs: unit
+    # No `needs: unit` — runs in parallel with unit to reduce wall-clock time.
+    # The `required` gate below still enforces both must pass before merge.
     runs-on: ubicloud-standard-2
     env:
       PLAYWRIGHT_BROWSERS_PATH: 0
@@ -55,6 +59,9 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        with:
+          cache-token: ${{ secrets.TURBO_CACHE_TOKEN }}
+          axiom-token: ${{ secrets.AXIOM_API_TOKEN }}
 
       - name: Install Playwright browsers
         working-directory: packages/app

@@ -19,7 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
-      - run: bun install --frozen-lockfile
+        with:
+          cache-token: ${{ secrets.TURBO_CACHE_TOKEN }}
+          axiom-token: ${{ secrets.AXIOM_API_TOKEN }}
       - name: Prettier check
         run: bunx prettier --check .
 
