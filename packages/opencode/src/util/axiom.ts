@@ -4,13 +4,14 @@ const AXIOM_URL = "https://api.axiom.co/v1/datasets"
 
 /**
  * Safely serialize a value to JSON, handling BigInt and circular references.
+ * BigInt values are converted to strings; other non-serializable values fall
+ * back to their string representation.
  */
 function safeStringify(value: unknown): string {
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return JSON.stringify(String(value))
-  }
+  return JSON.stringify(value, (_key, val) => {
+    if (typeof val === "bigint") return val.toString()
+    return val
+  })
 }
 
 /**

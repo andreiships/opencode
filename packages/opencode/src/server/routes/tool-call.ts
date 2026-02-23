@@ -163,8 +163,17 @@ export const ToolCallRoutes = lazy(() =>
         })
       }
 
+      // result must be defined here: the only paths are caughtErr (handled above)
+      // or a successful tool.execute() call. Explicit guard makes this invariant clear.
+      if (result === undefined) {
+        return c.json({
+          content: [{ type: "text" as const, text: "internal error: no result produced" }],
+          isError: true,
+        })
+      }
+
       return c.json({
-        content: [{ type: "text" as const, text: result?.output ?? "" }],
+        content: [{ type: "text" as const, text: result.output }],
       })
     },
   ),
