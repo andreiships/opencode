@@ -30,20 +30,18 @@ jobs:
       - name: Run unit tests
         run: bun turbo test
 
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        if: always()
+        with:
+          files: packages/opencode/coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
   e2e:
-    name: e2e (${{ matrix.settings.name }})
+    name: e2e (linux)
     needs: unit
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - name: linux
-            host: ubicloud-standard-2
-            playwright: bunx playwright install --with-deps
-          - name: windows
-            host: windows-latest
-            playwright: bunx playwright install
-    runs-on: ${{ matrix.settings.host }}
+    runs-on: ubicloud-standard-2
     env:
       PLAYWRIGHT_BROWSERS_PATH: 0
     defaults:
@@ -60,7 +58,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: packages/app
-        run: ${{ matrix.settings.playwright }}
+        run: bunx playwright install --with-deps
 
       - name: Run app e2e tests
         run: bun --cwd packages/app test:e2e:local
@@ -72,7 +70,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-${{ matrix.settings.name }}-${{ github.run_attempt }}
+          name: playwright-linux-${{ github.run_attempt }}
           if-no-files-found: ignore
           retention-days: 7
           path: |
