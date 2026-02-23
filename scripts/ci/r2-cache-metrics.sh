@@ -47,6 +47,7 @@ emit_r2_cache_event() {
   payload=$(jq -n \
     --arg event "$event" \
     --arg timestamp "$timestamp" \
+    --arg repository "${GITHUB_REPOSITORY:-unknown/unknown}" \
     --arg workflow "${GITHUB_WORKFLOW:-unknown}" \
     --arg job "${GITHUB_JOB:-unknown}" \
     --arg run_id "${GITHUB_RUN_ID:-0}" \
@@ -61,6 +62,7 @@ emit_r2_cache_event() {
     '[{
       event: $event,
       timestamp: $timestamp,
+      repository: $repository,
       workflow: $workflow,
       job: $job,
       run_id: $run_id,
