@@ -8,3 +8,4 @@ self-hosted-runner:
     - ubicloud-standard-8-arm
     - ubicloud-standard-16
     - ubicloud-standard-16-arm
+    - blacksmith-4vcpu-ubuntu-2404
