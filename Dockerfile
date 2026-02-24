@@ -21,6 +21,7 @@ COPY packages/script/package.json packages/script/
 COPY packages/plugin/package.json packages/plugin/
 COPY packages/sdk/js/package.json packages/sdk/js/
 COPY packages/util/package.json packages/util/
+COPY packages/slack/package.json packages/slack/
 
 # Install all dependencies
 RUN bun install --frozen-lockfile
