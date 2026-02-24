@@ -24,7 +24,7 @@ COPY packages/util/package.json packages/util/
 COPY packages/slack/package.json packages/slack/
 
 # Install all dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy full source
 COPY . .
