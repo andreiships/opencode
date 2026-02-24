@@ -44,5 +44,7 @@ jobs:
           tags: |
             registry.fly.io/pistachiorama-opencode:${{ steps.version.outputs.tag }}
             ${{ steps.version.outputs.latest_tag }}
+          build-args: |
+            OPENCODE_VERSION=${{ steps.version.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

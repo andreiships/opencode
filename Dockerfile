@@ -10,6 +10,10 @@ FROM oven/bun:1.3.9-alpine AS builder
 
 WORKDIR /app
 
+# Receive version from CI build-arg; used by script/build.ts to resolve channel
+ARG OPENCODE_VERSION
+ENV OPENCODE_VERSION=$OPENCODE_VERSION
+
 # Install build dependencies (needed for native modules like tree-sitter)
 RUN apk add --no-cache python3 make g++ git
 
@@ -21,9 +25,10 @@ COPY packages/script/package.json packages/script/
 COPY packages/plugin/package.json packages/plugin/
 COPY packages/sdk/js/package.json packages/sdk/js/
 COPY packages/util/package.json packages/util/
+COPY packages/slack/package.json packages/slack/
 
 # Install all dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy full source
 COPY . .
