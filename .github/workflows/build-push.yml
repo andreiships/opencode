@@ -30,7 +30,7 @@ jobs:
           tag="${GITHUB_REF#refs/tags/}"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           # Only promote :latest for stable releases (no pre-release suffix like -alpha, -rc1)
-          if [[ "$tag" \!= *-* ]]; then
+          if [[ "$tag" != *-* ]]; then
             echo "latest_tag=registry.fly.io/pistachiorama-opencode:latest" >> "$GITHUB_OUTPUT"
           fi
 
