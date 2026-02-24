@@ -16,7 +16,6 @@ packages/enterprise
 packages/extensions
 packages/function
 packages/identity
-packages/slack
 packages/ui
 sdks
 github
