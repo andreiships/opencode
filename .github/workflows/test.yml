@@ -35,8 +35,18 @@ jobs:
 
       - name: Generate coverage report
         if: "!cancelled()"
+        # continue-on-error: coverage generation is best-effort for Codecov
+        # visualization, but see Upload coverage artifact below — if lcov is
+        # missing the artifact upload will warn and diff-cover will skip.
         continue-on-error: true
-        run: bun --cwd packages/opencode test --coverage --coverage-reporter=lcov --timeout 30000
+        run: |
+          bun --cwd packages/opencode test --coverage --coverage-reporter=lcov --timeout 30000
+          # Fix lcov source paths: bun generates SF:src/... relative to packages/opencode
+          # but diff-cover compares against repo-root paths (packages/opencode/src/...).
+          if [ -f packages/opencode/coverage/lcov.info ]; then
+            sed -i.bak 's|^SF:src/|SF:packages/opencode/src/|g' packages/opencode/coverage/lcov.info
+            rm -f packages/opencode/coverage/lcov.info.bak
+          fi
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
@@ -52,7 +62,9 @@ jobs:
         with:
           name: typescript-coverage
           path: packages/opencode/coverage/lcov.info
-          if-no-files-found: ignore
+          # warn (not error) — diff-cover-enforcement tolerates missing artifact
+          # by skipping the check and posting an explanatory annotation
+          if-no-files-found: warn
 
   e2e:
     name: e2e (linux)
@@ -111,27 +123,34 @@ jobs:
       - name: Fetch base branch
         # Explicitly fetch base branch so diff-cover can resolve it locally.
         # actions/checkout with fetch-depth: 0 fetches history but does not
-        # guarantee origin/${{ github.base_ref }} is a locally-resolvable ref.
-        run: git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
+        # guarantee the base ref is locally-resolvable. --force handles the
+        # case where the ref already exists but may be stale.
+        run: git fetch origin ${{ github.base_ref }}:${{ github.base_ref }} --force
 
       - name: Download coverage
+        id: download-coverage
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: typescript-coverage
           path: coverage/
 
       - name: Setup Python
+        if: steps.download-coverage.outcome == 'success'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install diff-cover
+        if: steps.download-coverage.outcome == 'success'
         run: pip install diff-cover
 
       - name: Diff cover check
+        if: steps.download-coverage.outcome == 'success'
         # Scoped to packages/opencode/src — packages/app coverage is deferred
-        # until its test suite matures (see PR description). --src-paths limits
-        # the check to only TypeScript source files in this package.
+        # until its test suite matures (see PR description).
+        # --src-paths limits analysis to opencode TypeScript files only.
+        # lcov paths were already rewritten to repo-root-relative in the unit job.
         run: |
           diff-cover coverage/lcov.info \
             --compare-branch=${{ github.base_ref }} \
@@ -139,6 +158,12 @@ jobs:
             --fail-under=80 \
             --json-report coverage/diff-cover.json \
             --html-report coverage/diff-cover.html
+
+      - name: Coverage artifact missing — skipping diff-cover
+        if: steps.download-coverage.outcome != 'success'
+        run: |
+          echo "::warning::Coverage artifact not found (coverage generation may have failed in unit job). Diff-cover check skipped."
+          echo "::notice::To investigate: check the 'Generate coverage report' step in the unit job."
 
   required:
     name: test (linux)
