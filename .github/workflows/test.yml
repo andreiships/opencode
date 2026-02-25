@@ -148,14 +148,11 @@ jobs:
 
       - name: Diff cover check
         if: steps.download-coverage.outcome == 'success'
-        # Scoped to packages/opencode/src — packages/app coverage is deferred
-        # until its test suite matures (see PR description).
-        # --src-paths limits analysis to opencode TypeScript files only.
         # lcov paths were already rewritten to repo-root-relative in the unit job.
+        # Coverage is already scoped to packages/opencode — bun test only covers that package.
         run: |
           diff-cover coverage/lcov.info \
             --compare-branch=${{ github.base_ref }} \
-            --src-paths packages/opencode/src \
             --fail-under=80 \
             --json-report coverage/diff-cover.json \
             --html-report coverage/diff-cover.html
