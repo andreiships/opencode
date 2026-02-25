@@ -48,3 +48,11 @@ jobs:
             OPENCODE_VERSION=${{ steps.version.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy to Fly.io
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          export PATH="$HOME/.fly/bin:$PATH"
+          flyctl deploy --image registry.fly.io/pistachiorama-opencode:${{ steps.version.outputs.tag }} --app pistachiorama-opencode --wait-timeout 120
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
