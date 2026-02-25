@@ -115,7 +115,7 @@ jobs:
           path: coverage/
 
       - name: Diff cover check
-        uses: andreiships/pistachiorama/.github/actions/diff-cover-check@main
+        uses: ./.github/actions/diff-cover-check
         with:
           threshold: '80'
           coverage-file: coverage/lcov.info
