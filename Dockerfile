@@ -10,15 +10,17 @@ FROM oven/bun:1.3.9-alpine AS builder
 
 WORKDIR /app
 
-# Receive version from CI build-arg; used by script/build.ts to resolve channel
+# Receive version and channel from CI build-args; used by script/build.ts
 ARG OPENCODE_VERSION
 ENV OPENCODE_VERSION=$OPENCODE_VERSION
+ARG OPENCODE_CHANNEL
+ENV OPENCODE_CHANNEL=$OPENCODE_CHANNEL
 
 # Install build dependencies (needed for native modules like tree-sitter)
 RUN apk add --no-cache python3 make g++ git
 
 # Copy workspace root manifests and patches first for layer caching
-COPY package.json bun.lock ./
+COPY package.json bun.lock bunfig.toml ./
 COPY patches/ patches/
 COPY packages/opencode/package.json packages/opencode/
 COPY packages/script/package.json packages/script/

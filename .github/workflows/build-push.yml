@@ -46,6 +46,7 @@ jobs:
             ${{ steps.version.outputs.latest_tag }}
           build-args: |
             OPENCODE_VERSION=${{ steps.version.outputs.tag }}
+            OPENCODE_CHANNEL=latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

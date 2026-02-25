@@ -25,13 +25,41 @@ jobs:
       - name: Prettier check
         run: bunx prettier --check .
 
+  lint-workflows:
+    name: Lint Workflows (actionlint)
+    runs-on: ubicloud-standard-2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1.7.11
+        with:
+          ignore: "SC2016"
+
+  docker-build:
+    name: Docker Build (validate)
+    runs-on: ubicloud-standard-2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          build-args: |
+            OPENCODE_CHANNEL=latest
+            OPENCODE_VERSION=0.0.0-validate
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   # Aggregates lint jobs in this workflow. Branch protection must also require
   # the 'required' job from test.yml to gate unit + e2e tests.
   ci-pass:
     name: CI Pass
     runs-on: ubicloud-standard-2
     if: always()
-    needs: [lint]
+    needs: [lint, lint-workflows, docker-build]
     steps:
       - name: Check all jobs passed
         env:
