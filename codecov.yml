@@ -9,22 +9,22 @@ coverage:
     project:
       default:
         target: auto
-        threshold: 1%  # Ratchet: prevent decrease from baseline
+        threshold: 1% # Ratchet: prevent decrease from baseline
     patch:
       default:
         target: 70%
-        informational: true  # Enforcement via diff-cover job, not Codecov
+        informational: true # Enforcement via diff-cover job, not Codecov
 
 ignore:
-  - '**/*.test.ts'
-  - '**/*.test.tsx'
-  - '**/*.spec.ts'
-  - '**/*.spec.tsx'
-  - '**/*.d.ts'
-  - '**/types/**'
-  - '**/dist/**'
-  - '**/build/**'
-  - '**/node_modules/**'
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/*.d.ts"
+  - "**/types/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/node_modules/**"
 
 comment:
   layout: "reach,diff,flags,files"

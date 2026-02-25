@@ -117,7 +117,7 @@ jobs:
       - name: Diff cover check
         uses: ./.github/actions/diff-cover-check
         with:
-          threshold: '80'
+          threshold: "80"
           coverage-file: coverage/lcov.info
           compare-branch: origin/${{ github.base_ref }}
 

@@ -1,29 +1,29 @@
-name: 'Diff Cover Check'
-description: 'Enforce patch coverage threshold on changed lines using diff-cover'
+name: "Diff Cover Check"
+description: "Enforce patch coverage threshold on changed lines using diff-cover"
 
 inputs:
   threshold:
-    description: 'Coverage threshold percentage'
-    default: '80'
+    description: "Coverage threshold percentage"
+    default: "80"
   coverage-file:
-    description: 'Path to LCOV coverage file'
-    default: 'coverage/lcov.info'
+    description: "Path to LCOV coverage file"
+    default: "coverage/lcov.info"
   compare-branch:
-    description: 'Git branch to diff against (e.g. origin/main)'
+    description: "Git branch to diff against (e.g. origin/main)"
     required: true
   axiom-token:
-    description: 'Axiom API token for override telemetry (optional)'
-    default: ''
+    description: "Axiom API token for override telemetry (optional)"
+    default: ""
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
-        cache: 'pip'
-        cache-dependency-path: '${{ github.workspace }}/.github/actions/diff-cover-check/requirements.txt'
+        python-version: "3.12"
+        cache: "pip"
+        cache-dependency-path: "${{ github.workspace }}/.github/actions/diff-cover-check/requirements.txt"
 
     - name: Install diff-cover
       shell: bash
