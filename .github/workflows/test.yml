@@ -31,7 +31,15 @@ jobs:
           git config --global user.name "opencode"
 
       - name: Run unit tests
-        run: bun turbo test
+        run: bun turbo test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./packages/opencode/coverage/lcov.info
+          flags: opencode
+          fail_ci_if_error: false
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
