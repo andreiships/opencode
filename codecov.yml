@@ -1,11 +1,33 @@
+codecov:
+  require_ci_to_pass: yes
+
 coverage:
+  precision: 2
+  round: down
+  range: "70...100"
   status:
     project:
       default:
         target: auto
-        threshold: 1%
-        informational: true
+        threshold: 1%  # Ratchet: prevent decrease from baseline
     patch:
       default:
         target: 70%
-        informational: true
+        informational: true  # Enforcement via diff-cover job, not Codecov
+
+ignore:
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+  - '**/*.d.ts'
+  - '**/types/**'
+  - '**/dist/**'
+  - '**/build/**'
+  - '**/node_modules/**'
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: false
+  require_base: false

@@ -46,6 +46,14 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
+      - name: Upload coverage artifact
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-coverage
+          path: packages/opencode/coverage/lcov.info
+          if-no-files-found: ignore
+
   e2e:
     name: e2e (linux)
     # No `needs: unit` — runs in parallel with unit to reduce wall-clock time.
@@ -89,17 +97,45 @@ jobs:
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report
 
+  diff-cover-enforcement:
+    name: Enforce 80% Patch Coverage
+    needs: [unit]
+    if: always() && !cancelled() && github.event_name == 'pull_request' && needs.unit.result == 'success'
+    runs-on: ubicloud-standard-2
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: typescript-coverage
+          path: coverage/
+
+      - name: Diff cover check
+        uses: andreiships/pistachiorama/.github/actions/diff-cover-check@main
+        with:
+          threshold: '80'
+          coverage-file: coverage/lcov.info
+          compare-branch: origin/${{ github.base_ref }}
+
   required:
     name: test (linux)
     runs-on: ubicloud-standard-2
     needs:
       - unit
       - e2e
+      - diff-cover-enforcement
     if: always()
     steps:
       - name: Verify upstream test jobs passed
         run: |
           echo "unit=${{ needs.unit.result }}"
           echo "e2e=${{ needs.e2e.result }}"
+          echo "diff-cover=${{ needs.diff-cover-enforcement.result }}"
           test "${{ needs.unit.result }}" = "success"
           test "${{ needs.e2e.result }}" = "success"
+          # diff-cover only runs on PRs; skipped on push-to-dev
+          test "${{ needs.diff-cover-enforcement.result }}" = "success" -o "${{ needs.diff-cover-enforcement.result }}" = "skipped"
