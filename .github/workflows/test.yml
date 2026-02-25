@@ -37,7 +37,8 @@ jobs:
         if: "!cancelled()"
         # continue-on-error: coverage generation is best-effort for Codecov
         # visualization, but see Upload coverage artifact below — if lcov is
-        # missing the artifact upload will warn and diff-cover will skip.
+        # missing the artifact upload will warn and the diff-cover-enforcement
+        # job will fail the build with a clear error.
         continue-on-error: true
         run: |
           bun --cwd packages/opencode test --coverage --coverage-reporter=lcov --timeout 30000
