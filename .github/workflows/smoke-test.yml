@@ -1,0 +1,20 @@
+name: smoke-test
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
+
+jobs:
+  smoke:
+    name: Fly.io Smoke Test
+    runs-on: ubicloud-standard-2
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run integration smoke test
+        run: bash scripts/ci/test-opencode-integration.sh
+        env:
+          OPENCODE_URL: https://pistachiorama-opencode.fly.dev
+        timeout-minutes: 5
