@@ -35,8 +35,19 @@ jobs:
 
       - name: Generate coverage report
         if: "!cancelled()"
+        # continue-on-error: coverage generation is best-effort for Codecov
+        # visualization, but see Upload coverage artifact below — if lcov is
+        # missing the artifact upload will warn and the diff-cover-enforcement
+        # job will fail the build with a clear error.
         continue-on-error: true
-        run: bun --cwd packages/opencode test --coverage --coverage-reporter=lcov --timeout 30000
+        run: |
+          bun --cwd packages/opencode test --coverage --coverage-reporter=lcov --timeout 30000
+          # Fix lcov source paths: bun generates SF:src/... relative to packages/opencode
+          # but diff-cover compares against repo-root paths (packages/opencode/src/...).
+          if [ -f packages/opencode/coverage/lcov.info ]; then
+            sed -E -i.bak 's|^SF:(\.\/)?src/|SF:packages/opencode/src/|g' packages/opencode/coverage/lcov.info
+            rm -f packages/opencode/coverage/lcov.info.bak
+          fi
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
@@ -45,6 +56,16 @@ jobs:
           files: packages/opencode/coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+      - name: Upload coverage artifact
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-coverage
+          path: packages/opencode/coverage/lcov.info
+          # warn (not error) — diff-cover-enforcement tolerates missing artifact
+          # by skipping the check and posting an explanatory annotation
+          if-no-files-found: warn
 
   e2e:
     name: e2e (linux)
@@ -89,17 +110,87 @@ jobs:
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report
 
+  diff-cover-enforcement:
+    name: Enforce 80% Patch Coverage
+    needs: [unit]
+    if: github.event_name == 'pull_request' && needs.unit.result == 'success'
+    runs-on: ubicloud-standard-2
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        # Explicitly fetch base branch so diff-cover can resolve it locally.
+        # actions/checkout with fetch-depth: 0 fetches history but does not
+        # guarantee the base ref is locally-resolvable. --force handles the
+        # case where the ref already exists but may be stale.
+        run: git fetch origin ${{ github.base_ref }}:${{ github.base_ref }} --force
+
+      - name: Download coverage
+        id: download-coverage
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: typescript-coverage
+          path: coverage/
+
+      - name: Setup Python
+        if: steps.download-coverage.outcome == 'success'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install diff-cover
+        if: steps.download-coverage.outcome == 'success'
+        run: pip install diff-cover
+
+      - name: Diff cover check
+        if: steps.download-coverage.outcome == 'success'
+        # lcov paths were already rewritten to repo-root-relative in the unit job.
+        # Coverage is already scoped to packages/opencode — bun test only covers that package.
+        run: |
+          diff-cover coverage/lcov.info \
+            --compare-branch=${{ github.base_ref }} \
+            --fail-under=80 \
+            --json-report coverage/diff-cover.json \
+            --html-report coverage/diff-cover.html
+
+      - name: Upload diff-cover report
+        if: always() && steps.download-coverage.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-cover-report
+          path: |
+            coverage/diff-cover.json
+            coverage/diff-cover.html
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Coverage artifact missing — fail enforcement
+        if: steps.download-coverage.outcome != 'success'
+        run: |
+          echo "::error::Coverage artifact not found. The 80% patch coverage gate cannot run."
+          echo "::error::Root cause: 'Generate coverage report' step in the unit job likely failed."
+          echo "::error::Fix coverage generation in the unit job before this PR can merge."
+          exit 1
+
   required:
     name: test (linux)
     runs-on: ubicloud-standard-2
     needs:
       - unit
       - e2e
+      - diff-cover-enforcement
     if: always()
     steps:
       - name: Verify upstream test jobs passed
         run: |
           echo "unit=${{ needs.unit.result }}"
           echo "e2e=${{ needs.e2e.result }}"
+          echo "diff-cover=${{ needs.diff-cover-enforcement.result }}"
           test "${{ needs.unit.result }}" = "success"
           test "${{ needs.e2e.result }}" = "success"
+          # diff-cover only runs on PRs; skipped on push-to-dev
+          test "${{ needs.diff-cover-enforcement.result }}" = "success" -o "${{ needs.diff-cover-enforcement.result }}" = "skipped"
