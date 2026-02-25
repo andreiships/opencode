@@ -10,9 +10,11 @@ FROM oven/bun:1.3.9-alpine AS builder
 
 WORKDIR /app
 
-# Receive version from CI build-arg; used by script/build.ts to resolve channel
+# Receive version and channel from CI build-args; used by script/build.ts
 ARG OPENCODE_VERSION
 ENV OPENCODE_VERSION=$OPENCODE_VERSION
+ARG OPENCODE_CHANNEL
+ENV OPENCODE_CHANNEL=$OPENCODE_CHANNEL
 
 # Install build dependencies (needed for native modules like tree-sitter)
 RUN apk add --no-cache python3 make g++ git
