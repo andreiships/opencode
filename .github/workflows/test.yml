@@ -31,7 +31,10 @@ jobs:
           git config --global user.name "opencode"
 
       - name: Run unit tests
-        run: bun turbo test -- --coverage
+        run: bun turbo test
+
+      - name: Generate coverage report
+        run: bun --cwd packages/opencode test --coverage --timeout 30000
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
