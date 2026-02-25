@@ -1,3 +1,0 @@
-# diff-cover-check composite action dependencies.
-# Bump version here when updating — the hash change invalidates the pip cache automatically.
-diff-cover==10.2.0

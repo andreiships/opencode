@@ -115,7 +115,7 @@ jobs:
           path: coverage/
 
       - name: Diff cover check
-        uses: ./.github/actions/diff-cover-check
+        uses: andreiships/shared-ai-standards/.github/actions/diff-cover-check@main
         with:
           threshold: "80"
           coverage-file: coverage/lcov.info
