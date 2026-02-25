@@ -44,7 +44,7 @@ jobs:
           # Fix lcov source paths: bun generates SF:src/... relative to packages/opencode
           # but diff-cover compares against repo-root paths (packages/opencode/src/...).
           if [ -f packages/opencode/coverage/lcov.info ]; then
-            sed -i.bak 's|^SF:src/|SF:packages/opencode/src/|g' packages/opencode/coverage/lcov.info
+            sed -E -i.bak 's|^SF:(\.\/)?src/|SF:packages/opencode/src/|g' packages/opencode/coverage/lcov.info
             rm -f packages/opencode/coverage/lcov.info.bak
           fi
 
@@ -159,11 +159,24 @@ jobs:
             --json-report coverage/diff-cover.json \
             --html-report coverage/diff-cover.html
 
-      - name: Coverage artifact missing — skipping diff-cover
+      - name: Upload diff-cover report
+        if: always() && steps.download-coverage.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-cover-report
+          path: |
+            coverage/diff-cover.json
+            coverage/diff-cover.html
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Coverage artifact missing — fail enforcement
         if: steps.download-coverage.outcome != 'success'
         run: |
-          echo "::warning::Coverage artifact not found (coverage generation may have failed in unit job). Diff-cover check skipped."
-          echo "::notice::To investigate: check the 'Generate coverage report' step in the unit job."
+          echo "::error::Coverage artifact not found. The 80% patch coverage gate cannot run."
+          echo "::error::Root cause: 'Generate coverage report' step in the unit job likely failed."
+          echo "::error::Fix coverage generation in the unit job before this PR can merge."
+          exit 1
 
   required:
     name: test (linux)
