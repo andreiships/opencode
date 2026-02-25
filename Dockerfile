@@ -20,7 +20,7 @@ ENV OPENCODE_CHANNEL=$OPENCODE_CHANNEL
 RUN apk add --no-cache python3 make g++ git
 
 # Copy workspace root manifests and patches first for layer caching
-COPY package.json bun.lock ./
+COPY package.json bun.lock bunfig.toml ./
 COPY patches/ patches/
 COPY packages/opencode/package.json packages/opencode/
 COPY packages/script/package.json packages/script/
