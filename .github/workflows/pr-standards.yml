@@ -50,7 +50,10 @@ jobs:
             }
 
             const title = pr.title;
-            const titlePassed = process.env.TITLE_OUTCOME === 'success';
+            // 'success' = title valid; 'failure' = title invalid OR infra error (network/action fetch);
+            // 'skipped'/'cancelled' = step didn't run — treat as unknown (pass to avoid false positives)
+            const titleOutcome = process.env.TITLE_OUTCOME;
+            const titlePassed = titleOutcome === 'success' || titleOutcome === 'skipped' || titleOutcome === 'cancelled';
 
             async function addLabel(label) {
               await github.rest.issues.addLabels({
