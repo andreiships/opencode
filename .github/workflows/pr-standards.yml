@@ -119,7 +119,7 @@ jobs:
             const skipIssueCheck = /^(docs|refactor)\s*(\([a-zA-Z0-9-]+\))?\s*:/.test(title);
             if (skipIssueCheck) {
               await removeLabel('needs:issue');
-              console.log('Skipping issue check for docs/refactor/feat PR');
+              console.log('Skipping issue check for docs/refactor PR');
               return;
             }
             const query = `
