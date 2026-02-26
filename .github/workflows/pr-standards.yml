@@ -14,7 +14,7 @@ jobs:
       - name: Validate PR Title
         id: title-check
         continue-on-error: true
-        uses: andreiships/shared-ai-standards/.github/actions/pr-validation@main
+        uses: andreiships/shared-ai-standards/.github/actions/pr-validation@4a7766058a3981a4cd54b440c594aae1d8121c77 # main
         with:
           title-types: feat,fix,docs,chore,refactor,test
 
