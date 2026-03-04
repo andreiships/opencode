@@ -1,17 +1,19 @@
 # Dockerfile for pistachiorama-opencode (Fly.io deployment)
 #
 # Multi-stage build: installs dependencies, builds the native binary,
-# then copies it to a minimal alpine image with runtime dependencies.
+# then copies it to a minimal Debian image with runtime dependencies.
+# Using Debian (glibc) so the extracted binary is also compatible with
+# the sprite's Ubuntu 25.04 environment (Services API bootstrap).
 
 # ---------------------------------------------------------------------------
 # Stage 1: Build
 # ---------------------------------------------------------------------------
-FROM oven/bun:1.3.9-alpine AS builder
+FROM oven/bun:1.3.9-debian AS builder
 
 WORKDIR /app
 
 # Install build dependencies (needed for native modules like tree-sitter)
-RUN apk add --no-cache python3 make g++ git
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ git && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace root manifests first for layer caching
 COPY package.json bun.lock ./
@@ -43,10 +45,10 @@ RUN set -e; \
 # ---------------------------------------------------------------------------
 # Stage 2: Runtime
 # ---------------------------------------------------------------------------
-FROM alpine:3.21
+FROM debian:bookworm-slim
 
 # Runtime dependencies for the compiled binary
-RUN apk add --no-cache libgcc libstdc++ ripgrep git
+RUN apt-get update && apt-get install -y --no-install-recommends libgcc-s1 libstdc++6 ripgrep git ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy the compiled binary
 COPY --from=builder /usr/local/bin/opencode /usr/local/bin/opencode

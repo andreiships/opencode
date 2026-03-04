@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-push:
@@ -46,3 +46,20 @@ jobs:
             ${{ steps.version.outputs.latest_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Extract binary for sprite bootstrap
+        run: |
+          PUSHED_TAG="registry.fly.io/pistachiorama-opencode:${{ steps.version.outputs.tag }}"
+          docker pull "$PUSHED_TAG"
+          docker create --name tmp-extract "$PUSHED_TAG"
+          docker cp tmp-extract:/usr/local/bin/opencode ./opencode-linux-x64
+          docker rm tmp-extract
+          chmod +x opencode-linux-x64
+          file opencode-linux-x64
+
+      - name: Upload binary to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: opencode-linux-x64
+          fail_on_unmatched_files: true
