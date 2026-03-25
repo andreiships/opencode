@@ -18,16 +18,8 @@ permissions:
 
 jobs:
   unit:
-    name: unit (${{ matrix.settings.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - name: linux
-            host: ubicloud-standard-2
-          - name: windows
-            host: windows-latest
-    runs-on: ${{ matrix.settings.host }}
+    name: unit (linux)
+    runs-on: ubicloud-standard-2
     defaults:
       run:
         shell: bash
@@ -88,16 +80,8 @@ jobs:
   e2e:
     # No `needs: unit` — runs in parallel with unit to reduce wall-clock time.
     # The `required` gate below still enforces both must pass before merge.
-    name: e2e (${{ matrix.settings.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - name: linux
-            host: ubicloud-standard-2
-          - name: windows
-            host: windows-latest
-    runs-on: ${{ matrix.settings.host }}
+    name: e2e (linux)
+    runs-on: ubicloud-standard-2
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright-browsers
     defaults:
