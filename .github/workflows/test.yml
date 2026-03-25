@@ -132,7 +132,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-${{ matrix.settings.name }}-${{ github.run_attempt }}
+          name: playwright-linux-${{ github.run_attempt }}
           if-no-files-found: ignore
           retention-days: 7
           path: |
