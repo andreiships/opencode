@@ -1,0 +1,47 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (e.g. v1.3.2)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubicloud-standard-4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build binary via Docker
+        run: |
+          docker build --target builder -t opencode-builder .
+          CONTAINER_ID=$(docker create opencode-builder)
+          docker cp "$CONTAINER_ID:/build/packages/opencode/dist/linux-x64/bin/opencode" ./opencode
+          docker rm "$CONTAINER_ID"
+          chmod +x ./opencode
+
+      - name: Package as tar.gz
+        run: tar -czf opencode-linux-x64.tar.gz opencode
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          # Create release if it doesn't exist
+          gh release view "$TAG" 2>/dev/null || \
+            gh release create "$TAG" --title "$TAG" --notes "Built from source"
+          # Upload asset (replace if exists)
+          gh release upload "$TAG" opencode-linux-x64.tar.gz --clobber
