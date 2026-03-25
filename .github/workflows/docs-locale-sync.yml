@@ -9,7 +9,7 @@ on:
 
 jobs:
   sync-locales:
-    if: github.actor != 'opencode-agent[bot]'
+    if: github.repository == 'anomalyco/opencode' && github.actor != 'opencode-agent[bot]'
     runs-on: ubicloud-standard-2
     permissions:
       contents: write
