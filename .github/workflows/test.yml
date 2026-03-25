@@ -81,7 +81,7 @@ jobs:
     # No `needs: unit` — runs in parallel with unit to reduce wall-clock time.
     # The `required` gate below still enforces both must pass before merge.
     name: e2e (linux)
-    runs-on: ubicloud-standard-2
+    runs-on: ubicloud-standard-4
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright-browsers
     defaults:
