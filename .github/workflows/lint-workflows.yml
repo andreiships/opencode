@@ -34,6 +34,6 @@ jobs:
           echo "${{ github.workspace }}" >> "$GITHUB_PATH"
 
       - name: Run actionlint
-        # Disable shellcheck integration — upstream workflow run: blocks have
-        # numerous SC2086/SC2140/SC2155 warnings that are not worth fixing in a fork.
-        run: actionlint -color -shellcheck=
+        # Disable shellcheck (upstream run: blocks have numerous warnings) and
+        # ignore upstream publish.yml expression errors (cross-job step references).
+        run: actionlint -color -shellcheck= -ignore 'property "committer" is not defined'
