@@ -6,7 +6,18 @@ on:
 
 jobs:
   check-standards:
-    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login != 'actions-user' &&
+      github.event.pull_request.user.login != 'opencode' &&
+      github.event.pull_request.user.login != 'rekram1-node' &&
+      github.event.pull_request.user.login != 'thdxr' &&
+      github.event.pull_request.user.login != 'kommander' &&
+      github.event.pull_request.user.login != 'jayair' &&
+      github.event.pull_request.user.login != 'fwang' &&
+      github.event.pull_request.user.login != 'adamdotdevin' &&
+      github.event.pull_request.user.login != 'iamdavidhill' &&
+      github.event.pull_request.user.login != 'opencode-agent[bot]'
+    runs-on: ubicloud-standard-2
     permissions:
       contents: read
       pull-requests: write

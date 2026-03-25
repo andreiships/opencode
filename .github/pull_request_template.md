@@ -1,29 +1,21 @@
-### Issue for this PR
+## Summary
 
-Closes #
+<!-- What does this PR do and why? 1-3 sentences. -->
 
-### Type of change
+## Changes
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Refactor / code improvement
-- [ ] Documentation
+<!-- What problem does this solve? What is the solution? -->
 
-### What does this PR do?
+**Problem:**
 
-Please provide a description of the issue, the changes you made to fix it, and why they work. It is expected that you understand why your changes work and if you do not understand why at least say as much so a maintainer knows how much to value the PR.
+**Solution:**
 
-**If you paste a large clearly AI generated description here your PR may be IGNORED or CLOSED!**
+## Test Plan
 
-### How did you verify your code works?
+- [ ] <!-- How did you verify this works? -->
 
-### Screenshots / recordings
+## Related
 
-_If this is a UI change, please include a screenshot or recording._
+<!-- Links to issues, specs, or related PRs -->
 
-### Checklist
-
-- [ ] I have tested my changes locally
-- [ ] I have not included unrelated changes in this PR
-
-_If you do not follow this template your PR will be automatically rejected._
+- Closes #
