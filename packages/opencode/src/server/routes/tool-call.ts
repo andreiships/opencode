@@ -2,6 +2,8 @@ import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
 import { Session } from "../../session"
+import { SessionID, MessageID } from "../../session/schema"
+import { ProviderID, ModelID } from "../../provider/schema"
 import { ToolRegistry } from "../../tool/registry"
 import { Agent } from "../../agent/agent"
 import { Log } from "../../util/log"
@@ -58,12 +60,13 @@ export const ToolCallRoutes = lazy(() =>
       const { name, arguments: args } = c.req.valid("json")
 
       // Validate session exists (throws NotFoundError → 404 via error handler)
-      await Session.get(sessionID)
+      const sid = SessionID.make(sessionID)
+      await Session.get(sid)
 
       // Resolve agent name → Agent.Info so ToolRegistry receives the correct type
       const agentName = await Agent.defaultAgent()
       const agentInfo = await Agent.get(agentName)
-      const modelCtx = agentInfo?.model ?? { providerID: "opencode", modelID: "default" }
+      const modelCtx = agentInfo?.model ?? { providerID: ProviderID.make("opencode"), modelID: ModelID.make("default") }
       const tools = await ToolRegistry.tools(modelCtx, agentInfo)
 
       // Base telemetry fields shared across all events
@@ -98,11 +101,11 @@ export const ToolCallRoutes = lazy(() =>
 
       try {
         const abortController = new AbortController()
-        const messages = await Session.messages({ sessionID })
+        const messages = await Session.messages({ sessionID: sid })
 
         result = await tool.execute(args, {
-          sessionID,
-          messageID: "tool-call-direct",
+          sessionID: sid,
+          messageID: MessageID.make("tool-call-direct"),
           agent: agentName,
           abort: abortController.signal,
           messages,

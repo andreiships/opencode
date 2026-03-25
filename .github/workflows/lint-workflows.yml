@@ -34,4 +34,6 @@ jobs:
           echo "${{ github.workspace }}" >> "$GITHUB_PATH"
 
       - name: Run actionlint
-        run: actionlint -color
+        # Disable shellcheck integration — upstream workflow run: blocks have
+        # numerous SC2086/SC2140/SC2155 warnings that are not worth fixing in a fork.
+        run: actionlint -color -shellcheck=
