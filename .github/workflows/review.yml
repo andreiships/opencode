@@ -37,6 +37,7 @@ jobs:
       - name: Get PR details
         id: pr-details
         run: |
+          # shellcheck disable=all
           gh api /repos/${{ github.repository }}/pulls/${{ steps.pr-number.outputs.number }} > pr_data.json
           echo "title=$(jq -r .title pr_data.json)" >> $GITHUB_OUTPUT
           echo "sha=$(jq -r .head.sha pr_data.json)" >> $GITHUB_OUTPUT
@@ -50,6 +51,7 @@ jobs:
           OPENCODE_PERMISSION: '{ "bash": {  "*": "deny", "gh*": "allow", "gh pr review*": "deny" } }'
           PR_TITLE: ${{ steps.pr-details.outputs.title }}
         run: |
+          # shellcheck disable=all
           PR_BODY=$(jq -r .body pr_data.json)
           opencode run -m anthropic/claude-opus-4-5 "A new pull request has been created: '${PR_TITLE}'
 
