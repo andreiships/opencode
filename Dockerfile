@@ -24,6 +24,7 @@ WORKDIR /build
 
 # Copy dependency manifests first for layer caching
 COPY package.json bun.lock bunfig.toml turbo.json ./
+COPY patches/ patches/
 COPY packages/ packages/
 
 # Install dependencies
