@@ -10,6 +10,7 @@ import { Log } from "../../util/log"
 import { ingest } from "../../util/axiom"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import { NamedError } from "@opencode-ai/util/error"
 
 const log = Log.create({ service: "server.tool-call" })
 
@@ -180,6 +181,9 @@ export const ToolCallRoutes = lazy(() =>
         content: [{ type: "text" as const, text: result.output }],
       })
       } catch (outerErr) {
+        // Re-throw known errors so Hono's onError handler returns proper status codes
+        // (e.g., NotFoundError → 404, ModelNotFoundError → 400)
+        if (outerErr instanceof NamedError) throw outerErr
         const errorName = outerErr instanceof Error ? outerErr.name : "Error"
         const errorMessage = outerErr instanceof Error ? outerErr.message : String(outerErr)
         log.error("tool-call handler crash", { error: outerErr })
