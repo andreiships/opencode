@@ -130,7 +130,7 @@ jobs:
 
             await removeLabel('needs:title');
 
-            // Check for linked issue (skip for docs/refactor/feat/chore PRs)
+            // Check for linked issue (skip for docs/refactor/feat/chore PRs — maintenance tasks don't need issues)
             const skipIssueCheck = /^(docs|refactor|feat|chore)\s*(\([a-zA-Z0-9-]+\))?\s*:/.test(title);
             if (skipIssueCheck) {
               await removeLabel('needs:issue');

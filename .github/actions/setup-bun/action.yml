@@ -59,7 +59,7 @@ runs:
     - name: Restore node_modules from R2
       id: restore
       if: inputs.cache-token != ''
-      uses: ./.github/actions/r2-cache
+      uses: andreiships/shared-ai-standards/.github/actions/r2-cache@41b2466c374cddf778ed0ea5bb2d08db7d9939d7 # main
       with:
         action: restore
         key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lock') }}
@@ -71,6 +71,7 @@ runs:
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
         axiom-token: ${{ inputs.axiom-token }}
+        metrics-script: scripts/ci/r2-cache-metrics.sh
 
     - name: Install dependencies
       if: steps.restore.outputs.cache-hit != 'true'
@@ -87,7 +88,7 @@ runs:
 
     - name: Save node_modules to R2
       if: inputs.cache-token != '' && steps.restore.outputs.cache-hit != 'true'
-      uses: ./.github/actions/r2-cache
+      uses: andreiships/shared-ai-standards/.github/actions/r2-cache@41b2466c374cddf778ed0ea5bb2d08db7d9939d7 # main
       with:
         action: save
         key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lock') }}
@@ -99,3 +100,4 @@ runs:
           sdks/*/node_modules
         cache-token: ${{ inputs.cache-token }}
         axiom-token: ${{ inputs.axiom-token }}
+        metrics-script: scripts/ci/r2-cache-metrics.sh
