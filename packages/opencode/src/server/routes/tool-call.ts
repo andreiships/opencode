@@ -56,6 +56,7 @@ export const ToolCallRoutes = lazy(() =>
     ),
     validator("json", ToolCallRequest),
     async (c) => {
+      try {
       const sessionID = c.req.valid("param").sessionID
       const { name, arguments: args } = c.req.valid("json")
 
@@ -178,6 +179,13 @@ export const ToolCallRoutes = lazy(() =>
       return c.json({
         content: [{ type: "text" as const, text: result.output }],
       })
+      } catch (outerErr) {
+        log.error("tool-call handler crash", { error: outerErr })
+        return c.json({
+          content: [{ type: "text" as const, text: `tool-call handler error: ${outerErr instanceof Error ? outerErr.message : String(outerErr)}` }],
+          isError: true,
+        })
+      }
     },
   ),
 )
