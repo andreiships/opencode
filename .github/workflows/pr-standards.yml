@@ -22,8 +22,17 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - name: Check PR standards
+      - name: Validate PR Title
+        id: title-check
+        continue-on-error: true
+        uses: andreiships/shared-ai-standards/.github/actions/pr-validation@41b2466c374cddf778ed0ea5bb2d08db7d9939d7 # main
+        with:
+          title-types: feat,fix,docs,chore,refactor,test
+
+      - name: Manage PR labels and check linked issue
         uses: actions/github-script@v7
+        env:
+          TITLE_OUTCOME: ${{ steps.title-check.outcome }}
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -52,6 +61,11 @@ jobs:
             }
 
             const title = pr.title;
+
+            // 'success' = title valid; 'failure' = title invalid OR infra error (network/action fetch);
+            // 'skipped'/'cancelled' = step didn't run — treat as unknown (pass to avoid false positives)
+            const titleOutcome = process.env.TITLE_OUTCOME;
+            const titlePassed = titleOutcome === 'success' || titleOutcome === 'skipped' || titleOutcome === 'cancelled';
 
             async function addLabel(label) {
               await github.rest.issues.addLabels({
@@ -82,10 +96,10 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: pr.number
               });
-              
-              const existing = comments.find(c => c.body.includes(markerText));
+
+              const existing = comments.find(c => c.body?.includes(markerText));
               if (existing) return;
-              
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -94,12 +108,8 @@ jobs:
               });
             }
 
-            // Step 1: Check title format
-            // Matches: feat:, feat(scope):, feat (scope):, etc.
-            const titlePattern = /^(feat|fix|docs|chore|refactor|test)\s*(\([a-zA-Z0-9-]+\))?\s*:/;
-            const hasValidTitle = titlePattern.test(title);
-
-            if (!hasValidTitle) {
+            // Title validation (shared action handles regex, we manage labels/comments)
+            if (!titlePassed) {
               await addLabel('needs:title');
               await comment('title', `Hey! Your PR title \`${title}\` doesn't follow conventional commit format.
 
@@ -114,13 +124,14 @@ jobs:
             Where \`scope\` is the package name (e.g., \`app\`, \`desktop\`, \`opencode\`).
 
             See [CONTRIBUTING.md](../blob/dev/CONTRIBUTING.md#pr-titles) for details.`);
+              core.setFailed('PR title does not follow conventional commit format');
               return;
             }
 
             await removeLabel('needs:title');
 
-            // Step 2: Check for linked issue (skip for docs/refactor/feat PRs)
-            const skipIssueCheck = /^(docs|refactor|feat)\s*(\([a-zA-Z0-9-]+\))?\s*:/.test(title);
+            // Check for linked issue (skip for docs/refactor/feat/chore PRs)
+            const skipIssueCheck = /^(docs|refactor|feat|chore)\s*(\([a-zA-Z0-9-]+\))?\s*:/.test(title);
             if (skipIssueCheck) {
               await removeLabel('needs:issue');
               console.log('Skipping issue check for docs/refactor/feat PR');
@@ -157,6 +168,7 @@ jobs:
             2. Add \`Fixes #<number>\` or \`Closes #<number>\` to this PR description
 
             See [CONTRIBUTING.md](../blob/dev/CONTRIBUTING.md#issue-first-policy) for details.`);
+              core.setFailed('PR must have a linked issue');
               return;
             }
 
