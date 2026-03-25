@@ -51,6 +51,19 @@ jobs:
       - name: Run unit tests
         run: bun turbo test
 
+      - name: Generate coverage report
+        if: "!cancelled()"
+        continue-on-error: true
+        run: bun --cwd packages/opencode test --coverage --coverage-reporter=lcov --timeout 30000
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        if: always()
+        with:
+          files: packages/opencode/coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
   e2e:
     # No `needs: unit` — runs in parallel with unit to reduce wall-clock time.
     # The `required` gate below still enforces both must pass before merge.
