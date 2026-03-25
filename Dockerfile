@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /build/packages/opencode/dist/linux-x64/bin/opencode /usr/local/bin/opencode
+COPY --from=builder /build/packages/opencode/dist/opencode-linux-x64/bin/opencode /usr/local/bin/opencode
 RUN chmod +x /usr/local/bin/opencode
 
 ENTRYPOINT ["opencode"]
