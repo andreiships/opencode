@@ -28,7 +28,7 @@ jobs:
         run: |
           docker build --target builder -t opencode-builder .
           CONTAINER_ID=$(docker create opencode-builder)
-          docker cp "$CONTAINER_ID:/build/packages/opencode/dist/linux-x64/bin/opencode" ./opencode
+          docker cp "$CONTAINER_ID:/build/packages/opencode/dist/opencode-linux-x64/bin/opencode" ./opencode
           docker rm "$CONTAINER_ID"
           chmod +x ./opencode
 
