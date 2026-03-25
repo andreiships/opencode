@@ -30,7 +30,7 @@ jobs:
 
       - name: Download actionlint
         run: |
-          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.7
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.11
           echo "${{ github.workspace }}" >> "$GITHUB_PATH"
 
       - name: Run actionlint
