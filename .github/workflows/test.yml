@@ -39,6 +39,9 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        with:
+          cache-token: ${{ secrets.TURBO_CACHE_TOKEN }}
+          axiom-token: ${{ secrets.AXIOM_API_TOKEN }}
 
       - name: Configure git identity
         run: |
@@ -49,6 +52,8 @@ jobs:
         run: bun turbo test
 
   e2e:
+    # No `needs: unit` — runs in parallel with unit to reduce wall-clock time.
+    # The `required` gate below still enforces both must pass before merge.
     name: e2e (${{ matrix.settings.name }})
     strategy:
       fail-fast: false
@@ -72,6 +77,9 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        with:
+          cache-token: ${{ secrets.TURBO_CACHE_TOKEN }}
+          axiom-token: ${{ secrets.AXIOM_API_TOKEN }}
 
       - name: Read Playwright version
         id: playwright-version

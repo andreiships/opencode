@@ -1,5 +1,21 @@
 name: "Setup Bun"
-description: "Setup Bun with caching and install dependencies"
+description: "Setup Bun and install dependencies, with optional R2 node_modules caching"
+
+inputs:
+  cache-token:
+    description: "Bearer token for R2 cache (cache.pistachiorama.ai). Leave empty to skip caching."
+    required: false
+    default: ""
+  axiom-token:
+    description: "Axiom API token for cache telemetry. Leave empty to skip metrics."
+    required: false
+    default: ""
+
+outputs:
+  cache-hit:
+    description: "Whether node_modules were restored from cache (bun install was skipped)"
+    value: ${{ steps.restore.outputs.cache-hit || 'false' }}
+
 runs:
   using: "composite"
   steps:
@@ -40,7 +56,24 @@ runs:
       run: python3 -m pip install setuptools || pip install setuptools || true
       shell: bash
 
+    - name: Restore node_modules from R2
+      id: restore
+      if: inputs.cache-token != ''
+      uses: ./.github/actions/r2-cache
+      with:
+        action: restore
+        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lock') }}
+        path: |
+          node_modules
+          packages/*/node_modules
+          packages/console/*/node_modules
+          packages/sdk/*/node_modules
+          sdks/*/node_modules
+        cache-token: ${{ inputs.cache-token }}
+        axiom-token: ${{ inputs.axiom-token }}
+
     - name: Install dependencies
+      if: steps.restore.outputs.cache-hit != 'true'
       run: |
         # Workaround for patched peer variants
         # e.g. ./patches/ for standard-openapi
@@ -51,3 +84,18 @@ runs:
           bun install
         fi
       shell: bash
+
+    - name: Save node_modules to R2
+      if: inputs.cache-token != '' && steps.restore.outputs.cache-hit != 'true'
+      uses: ./.github/actions/r2-cache
+      with:
+        action: save
+        key: opencode/node-modules/${{ runner.os }}/${{ hashFiles('**/bun.lock') }}
+        path: |
+          node_modules
+          packages/*/node_modules
+          packages/console/*/node_modules
+          packages/sdk/*/node_modules
+          sdks/*/node_modules
+        cache-token: ${{ inputs.cache-token }}
+        axiom-token: ${{ inputs.axiom-token }}
