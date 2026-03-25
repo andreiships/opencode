@@ -180,9 +180,20 @@ export const ToolCallRoutes = lazy(() =>
         content: [{ type: "text" as const, text: result.output }],
       })
       } catch (outerErr) {
+        const errorName = outerErr instanceof Error ? outerErr.name : "Error"
+        const errorMessage = outerErr instanceof Error ? outerErr.message : String(outerErr)
         log.error("tool-call handler crash", { error: outerErr })
+        ingest("opencode-tool-calls", [
+          {
+            _time: new Date().toISOString(),
+            tool_call_duration_ms: 0,
+            tool_name: "unknown",
+            is_error: true,
+            error_name: `OuterCatch:${errorName}`,
+          },
+        ])
         return c.json({
-          content: [{ type: "text" as const, text: `tool-call handler error: ${outerErr instanceof Error ? outerErr.message : String(outerErr)}` }],
+          content: [{ type: "text" as const, text: `tool-call handler error: ${errorMessage}` }],
           isError: true,
         })
       }
