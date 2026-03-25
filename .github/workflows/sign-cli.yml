@@ -15,7 +15,7 @@ jobs:
     runs-on: ubicloud-standard-2
     if: github.repository == 'anomalyco/opencode'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-tags: true
 

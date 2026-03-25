@@ -19,6 +19,7 @@ jobs:
       - name: Get version tag
         id: get_tag
         run: |
+          # shellcheck disable=all
           if [ "${{ github.event_name }}" = "release" ]; then
             TAG="${{ github.event.release.tag_name }}"
           else

@@ -11,9 +11,10 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   deploy:
+    if: github.repository == 'anomalyco/opencode'
     runs-on: ubicloud-standard-2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-bun
 

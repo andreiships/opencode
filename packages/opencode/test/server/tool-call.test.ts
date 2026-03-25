@@ -13,7 +13,7 @@ describe("POST /session/:sessionID/tool/call", () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
-        const app = Server.App()
+        const app = Server.createApp({})
         const response = await app.request("/session/ses_nonexistent123/tool/call", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -30,7 +30,7 @@ describe("POST /session/:sessionID/tool/call", () => {
       fn: async () => {
         const session = await Session.create({})
         try {
-          const app = Server.App()
+          const app = Server.createApp({})
           const response = await app.request(`/session/${session.id}/tool/call`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -50,7 +50,7 @@ describe("POST /session/:sessionID/tool/call", () => {
       fn: async () => {
         const session = await Session.create({})
         try {
-          const app = Server.App()
+          const app = Server.createApp({})
           const response = await app.request(`/session/${session.id}/tool/call`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -75,7 +75,7 @@ describe("POST /session/:sessionID/tool/call", () => {
       fn: async () => {
         const session = await Session.create({})
         try {
-          const app = Server.App()
+          const app = Server.createApp({})
           // Use the glob tool which is simpler than bash (no permission prompts)
           const response = await app.request(`/session/${session.id}/tool/call`, {
             method: "POST",
