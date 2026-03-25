@@ -142,7 +142,7 @@ jobs:
   diff-cover-enforcement:
     name: Enforce 80% Patch Coverage
     needs: [unit]
-    if: github.event_name == 'pull_request' && needs.unit.result == 'success' && !contains(github.event.pull_request.labels.*.name, 'skip-coverage')
+    if: github.event_name == 'pull_request' && needs.unit.result == 'success' && !contains(github.event.pull_request.labels.*.name, 'coverage-override')
     runs-on: ubicloud-standard-2
     timeout-minutes: 5
     steps:
