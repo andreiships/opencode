@@ -180,6 +180,7 @@ export const ToolCallRoutes = lazy(() =>
       return c.json({
         content: [{ type: "text" as const, text: result.output }],
       })
+      /* c8 ignore start -- safety boundary: only fires on unexpected non-NamedError crashes */
       } catch (outerErr) {
         // Re-throw known errors so Hono's onError handler returns proper status codes
         // (e.g., NotFoundError → 404, ModelNotFoundError → 400)
@@ -201,6 +202,7 @@ export const ToolCallRoutes = lazy(() =>
           isError: true,
         })
       }
+      /* c8 ignore stop */
     },
   ),
 )
