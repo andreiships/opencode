@@ -189,7 +189,8 @@ for (const item of targets) {
       windows: {},
     },
     minify: true,
-    bytecode: true,
+    // bytecode: true — disabled: top-level await in index.ts/worker.ts is incompatible
+    // with bytecode compilation. Re-enable when Bun supports TLA in bytecode mode.
     entrypoints: ["./src/index.ts", parserWorker, workerPath],
     define: {
       OPENCODE_VERSION: `'${Script.version}'`,
