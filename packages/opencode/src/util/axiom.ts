@@ -11,7 +11,7 @@ export function ingest(dataset: string, events: Record<string, unknown>[]): void
   if (events.length === 0) return
 
   // Use instance-scoped Env to allow per-instance/test isolation
-  const token = Env.get("AXIOM_TOKEN")
+  const token = Env.get("OPENCODE_AXIOM_TOKEN") || Env.get("AXIOM_TOKEN")
   if (!token) return
 
   // Fire-and-forget: send without awaiting to avoid blocking the request path
