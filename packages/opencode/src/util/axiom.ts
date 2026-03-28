@@ -4,7 +4,7 @@ const AXIOM_URL = "https://api.axiom.co/v1/datasets"
 
 /**
  * Ingest events into an Axiom dataset.
- * No-op when AXIOM_TOKEN is not set (local dev, testing, CI).
+ * No-op when OPENCODE_AXIOM_TOKEN / AXIOM_TOKEN is not set (local dev, testing, CI).
  * Fully best-effort: never throws, never blocks the caller.
  */
 export function ingest(dataset: string, events: Record<string, unknown>[]): void {
